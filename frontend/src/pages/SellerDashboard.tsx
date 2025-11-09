@@ -63,7 +63,7 @@ export default function SellerDashboard() {
         <button onClick={() => navigate('/')} className="back-button">
           ← 홈으로
         </button>
-        <h1>판매자 대시보드</h1>
+        <h1>판매자 센터</h1>
       </header>
 
       <main className="dashboard-content">
