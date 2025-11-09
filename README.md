@@ -306,10 +306,7 @@ Bedrock 모델 접근 권한 확인 필요. AWS Console에서 Bedrock 모델 액
 
 MIT
 
-## 기여
-
-이슈와 PR을 환영합니다!
 
 ## 문의
 
-프로젝트 관련 문의: [이메일]
+프로젝트 관련 문의: [dyseo521@gmail.com]

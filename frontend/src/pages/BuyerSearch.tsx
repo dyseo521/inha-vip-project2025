@@ -3,19 +3,87 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { SearchRequest, SearchResponse } from '@shared/index';
 
+// 임시 부품 데이터
+const mockParts = [
+  {
+    id: '1',
+    name: 'Tesla Model S 배터리 팩',
+    image: '/image/batterypack_1.jpg',
+    manufacturer: 'Tesla',
+    model: 'Model S',
+    price: 15000000,
+    quantity: 3,
+    capacity: '85kWh',
+    category: '배터리',
+    year: 2018
+  },
+  {
+    id: '2',
+    name: 'Nissan Leaf 구동 모터',
+    image: '/image/motor1.jpg',
+    manufacturer: 'Nissan',
+    model: 'Leaf',
+    price: 3500000,
+    quantity: 5,
+    power: '110kW',
+    category: '모터',
+    year: 2019
+  },
+  {
+    id: '3',
+    name: 'BMW i3 인버터',
+    image: '/image/inverter_1.png',
+    manufacturer: 'BMW',
+    model: 'i3',
+    price: 2800000,
+    quantity: 2,
+    type: '3상 AC/DC',
+    category: '인버터',
+    year: 2017
+  },
+  {
+    id: '4',
+    name: 'Chevrolet Bolt 구동 모터',
+    image: '/image/motor2.jpg',
+    manufacturer: 'Chevrolet',
+    model: 'Bolt',
+    price: 4200000,
+    quantity: 4,
+    power: '150kW',
+    category: '모터',
+    year: 2020
+  },
+  {
+    id: '5',
+    name: 'Hyundai Kona 차체 부품',
+    image: '/image/car_body.jpg',
+    manufacturer: 'Hyundai',
+    model: 'Kona Electric',
+    price: 5500000,
+    quantity: 1,
+    category: '차체',
+    year: 2021
+  },
+  {
+    id: '6',
+    name: 'Renault Zoe 고성능 모터',
+    image: '/image/motor3.jpg',
+    manufacturer: 'Renault',
+    model: 'Zoe',
+    price: 3200000,
+    quantity: 6,
+    power: '92kW',
+    category: '모터',
+    year: 2019
+  }
+];
+
 export default function BuyerSearch() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [searchParams, setSearchParams] = useState<SearchRequest | null>(null);
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 20000000]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['search', searchParams],
@@ -43,6 +111,15 @@ export default function BuyerSearch() {
       setSearchParams({ query: query.trim(), topK: 10 });
     }
   };
+
+  // 필터링된 부품 목록
+  const filteredParts = mockParts.filter(part => {
+    const categoryMatch = selectedCategory === 'all' || part.category === selectedCategory;
+    const priceMatch = part.price >= priceRange[0] && part.price <= priceRange[1];
+    return categoryMatch && priceMatch;
+  });
+
+  const categories = ['all', '배터리', '모터', '인버터', '차체'];
 
   // 예시 사례 데이터
   const exampleCases = [
@@ -98,114 +175,161 @@ export default function BuyerSearch() {
       </header>
 
       <main className="search-layout">
-        <div className="search-main">
-        <section className="search-box">
-          <h2>어떤 부품을 찾으시나요?</h2>
-          <form onSubmit={handleSearch}>
-            <div className="input-group">
-              <textarea
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="예: ESS 에너지 저장 시스템에 사용할 수 있는 배터리를 찾고 있어요.
-60kWh 이상, 리튬 이온 배터리이면 좋겠습니다."
-                rows={4}
-              />
-              <button type="submit" disabled={!query.trim() || isLoading}>
-                {isLoading ? '검색 중...' : 'AI 검색'}
-              </button>
-            </div>
-          </form>
+        {/* 왼쪽 필터 영역 */}
+        <aside className="filter-sidebar">
+          <div className="filter-sticky">
+            <section className="search-box-compact">
+              <h3>AI 검색</h3>
+              <form onSubmit={handleSearch}>
+                <textarea
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="예: ESS 구축용 안전한 배터리를 찾습니다. 5년 이상 사용 가능하고 60kWh 이상이면 좋겠어요."
+                  rows={3}
+                />
+                <button type="submit" disabled={!query.trim() || isLoading}>
+                  {isLoading ? '검색 중...' : '검색하기'}
+                </button>
+              </form>
+            </section>
 
-          <div className="search-tips">
-            <p><strong>검색 팁:</strong></p>
-            <ul>
-              <li>자연어로 자유롭게 질문하세요</li>
-              <li>활용처, 필요한 스펙, 조건 등을 명시하면 더 정확합니다</li>
-              <li>AI가 유사한 활용 사례를 바탕으로 추천해드립니다</li>
-            </ul>
-          </div>
-        </section>
+            <section className="filter-section">
+              <h3>카테고리</h3>
+              <div className="category-filters">
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    className={`category-btn ${selectedCategory === cat ? 'active' : ''}`}
+                    onClick={() => setSelectedCategory(cat)}
+                  >
+                    {cat === 'all' ? '전체' : cat}
+                  </button>
+                ))}
+              </div>
+            </section>
 
-        {error && (
-          <div className="error-message">
-            검색 중 오류가 발생했습니다: {(error as Error).message}
-          </div>
-        )}
-
-        {data && (
-          <section className="results">
-            <div className="results-header">
-              <h3>검색 결과 ({data.count}개)</h3>
-              {data.cached && <span className="cached-badge">⚡ 캐시됨</span>}
-            </div>
-
-            <div className="results-grid">
-              {data.results.map((result) => (
-                <div
-                  key={result.partId}
-                  className="part-card"
-                  onClick={() => navigate(`/parts/${result.partId}`)}
+            <section className="filter-section">
+              <h3>가격 범위</h3>
+              <div className="price-filters">
+                <button
+                  className={`price-btn ${priceRange[1] === 20000000 ? 'active' : ''}`}
+                  onClick={() => setPriceRange([0, 20000000])}
                 >
-                  <div className="part-header">
-                    <h4>{result.part.name}</h4>
-                    <span className="score">
-                      유사도: {(result.score * 100).toFixed(1)}%
-                    </span>
-                  </div>
+                  전체
+                </button>
+                <button
+                  className={`price-btn ${priceRange[1] === 5000000 ? 'active' : ''}`}
+                  onClick={() => setPriceRange([0, 5000000])}
+                >
+                  500만원 이하
+                </button>
+                <button
+                  className={`price-btn ${priceRange[1] === 10000000 && priceRange[0] === 5000000 ? 'active' : ''}`}
+                  onClick={() => setPriceRange([5000000, 10000000])}
+                >
+                  500만원-1000만원
+                </button>
+                <button
+                  className={`price-btn ${priceRange[0] === 10000000 ? 'active' : ''}`}
+                  onClick={() => setPriceRange([10000000, 20000000])}
+                >
+                  1000만원 이상
+                </button>
+              </div>
+            </section>
+          </div>
+        </aside>
 
-                  <div className="part-info">
-                    <p><strong>제조사:</strong> {result.part.manufacturer}</p>
-                    <p><strong>모델:</strong> {result.part.model}</p>
-                    <p><strong>가격:</strong> {result.part.price?.toLocaleString()}원</p>
-                    <p><strong>수량:</strong> {result.part.quantity}개</p>
-                  </div>
+        {/* 중앙 부품 그리드 */}
+        <div className="parts-main">
 
-                  <div className="ai-reason">
-                    <strong>🤖 AI 추천 이유:</strong>
-                    <p>{result.reason}</p>
-                  </div>
-
-                  <button className="detail-button">자세히 보기 →</button>
-                </div>
-              ))}
+          {error && (
+            <div className="error-message">
+              검색 중 오류가 발생했습니다: {(error as Error).message}
             </div>
-          </section>
-        )}
+          )}
+
+          {/* AI 검색 결과 */}
+          {data && (
+            <section className="ai-results">
+              <div className="results-header">
+                <h2>AI 검색 결과 ({data.count}개)</h2>
+                {data.cached && <span className="cached-badge">⚡ 캐시됨</span>}
+              </div>
+
+              <div className="parts-grid">
+                {data.results.map((result) => (
+                  <div
+                    key={result.partId}
+                    className="part-card-ai"
+                    onClick={() => navigate(`/parts/${result.partId}`)}
+                  >
+                    <div className="ai-score-badge">
+                      정확도 {(result.score * 100).toFixed(0)}%
+                    </div>
+                    <div className="part-info">
+                      <h4>{result.part.name}</h4>
+                      <p className="manufacturer">{result.part.manufacturer} · {result.part.model}</p>
+                      <p className="price">{result.part.price?.toLocaleString()}원</p>
+                      <p className="ai-reason">{result.reason}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 기본 부품 목록 */}
+          {!data && (
+            <>
+              <div className="parts-header">
+                <h2>등록된 부품 ({filteredParts.length}개)</h2>
+              </div>
+
+              <div className="parts-grid">
+                {filteredParts.map((part) => (
+                  <div
+                    key={part.id}
+                    className="part-card"
+                    onClick={() => navigate(`/parts/${part.id}`)}
+                  >
+                    <div className="part-image">
+                      <img src={part.image} alt={part.name} />
+                      <div className="quantity-badge">{part.quantity}개 재고</div>
+                    </div>
+                    <div className="part-info">
+                      <h4>{part.name}</h4>
+                      <p className="manufacturer">{part.manufacturer} · {part.model}</p>
+                      <p className="price">{part.price.toLocaleString()}원</p>
+                      <div className="spec-tags">
+                        {part.capacity && <span className="spec-tag">{part.capacity}</span>}
+                        {part.power && <span className="spec-tag">{part.power}</span>}
+                        {part.type && <span className="spec-tag">{part.type}</span>}
+                        <span className="year-tag">{part.year}년식</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* 예시 사례 사이드바 */}
-        <aside className="examples-sidebar">
+        {/* 예시 사이드바 (축소) */}
+        <aside className="examples-sidebar-compact">
           <div className="sidebar-sticky">
-            <h3 className="sidebar-title">검색 예시</h3>
-            <p className="sidebar-subtitle">다른 사용자들의 검색 사례를 참고하세요</p>
-
+            <h3>검색 예시</h3>
             <div className="examples-list">
-              {exampleCases.map((example, index) => (
-                <div key={index} className="example-card">
+              {exampleCases.slice(0, 3).map((example, index) => (
+                <div key={index} className="example-card-compact">
                   <div className="example-query">
-                    <span className="query-icon">💬</span>
                     <p>{example.query}</p>
                   </div>
-                  <div className="example-arrow">↓</div>
                   <div className="example-result">
-                    <div className="result-header">
-                      <span className="result-icon">✓</span>
-                      <strong>{example.result.name}</strong>
-                    </div>
-                    <div className="result-details">
-                      {example.result.capacity && (
-                        <span className="detail-badge">{example.result.capacity}</span>
-                      )}
-                      {example.result.power && (
-                        <span className="detail-badge">{example.result.power}</span>
-                      )}
-                      {example.result.type && (
-                        <span className="detail-badge">{example.result.type}</span>
-                      )}
-                      <span className="score-badge">
-                        {(example.result.score * 100).toFixed(0)}% 일치
-                      </span>
-                    </div>
+                    <strong>{example.result.name}</strong>
+                    <span className="score-badge">
+                      정확도 {(example.result.score * 100).toFixed(0)}%
+                    </span>
                   </div>
                 </div>
               ))}
@@ -258,394 +382,425 @@ export default function BuyerSearch() {
         }
 
         .search-layout {
-          max-width: 1400px;
+          max-width: 1600px;
           margin: 0 auto;
           padding: 2rem;
           display: grid;
-          grid-template-columns: 1fr 400px;
-          gap: 2rem;
+          grid-template-columns: 300px 1fr 280px;
+          gap: 1.5rem;
           align-items: start;
         }
 
-        .search-main {
-          min-width: 0;
-        }
-
-        .search-box {
-          background: white;
-          border-radius: 16px;
-          padding: 2.5rem;
-          margin-bottom: 2rem;
-          box-shadow: 0 8px 32px rgba(58, 0, 187, 0.12);
-          border: 1px solid rgba(0, 85, 244, 0.1);
-          transform: translateY(${scrollY * -0.1}px);
-          transition: transform 0.3s ease;
-        }
-
-        .search-box h2 {
-          margin: 0 0 1.5rem 0;
-          color: #3a00bb;
-          font-size: 1.6rem;
-        }
-
-        .input-group {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        textarea {
-          width: 100%;
-          padding: 1.25rem;
-          border: 2px solid #00a2ff;
-          border-radius: 12px;
-          font-size: 1rem;
-          font-family: inherit;
-          resize: vertical;
-          transition: all 0.3s ease;
-          background: rgba(0, 162, 255, 0.02);
-        }
-
-        textarea:focus {
-          outline: none;
-          border-color: #0055f4;
-          box-shadow: 0 0 0 4px rgba(0, 85, 244, 0.1);
-          background: white;
-        }
-
-        button[type="submit"] {
-          padding: 1.25rem 2.5rem;
-          background: linear-gradient(135deg, #3a00bb 0%, #0055f4 50%, #0080ff 100%);
-          color: white;
-          border: none;
-          border-radius: 12px;
-          font-size: 1.1rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 16px rgba(58, 0, 187, 0.3);
-        }
-
-        button[type="submit"]:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 24px rgba(58, 0, 187, 0.4);
-        }
-
-        button[type="submit"]:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .search-tips {
-          margin-top: 1.5rem;
-          padding: 1.25rem;
-          background: rgba(0, 128, 255, 0.08);
-          border-radius: 12px;
-          border-left: 4px solid #0080ff;
-          font-size: 0.95rem;
-        }
-
-        .search-tips strong {
-          color: #0055f4;
-        }
-
-        .search-tips ul {
-          margin: 0.5rem 0 0 1.5rem;
-          padding: 0;
-        }
-
-        .search-tips li {
-          margin: 0.5rem 0;
-          color: #333;
-        }
-
-        .error-message {
-          background: rgba(255, 82, 82, 0.1);
-          color: #d32f2f;
-          padding: 1.25rem;
-          border-radius: 12px;
-          margin-bottom: 1rem;
-          border-left: 4px solid #d32f2f;
-        }
-
-        .results {
-          background: white;
-          border-radius: 16px;
-          padding: 2.5rem;
-          box-shadow: 0 8px 32px rgba(58, 0, 187, 0.12);
-          border: 1px solid rgba(0, 85, 244, 0.1);
-        }
-
-        .results-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-          padding-bottom: 1rem;
-          border-bottom: 2px solid rgba(0, 162, 255, 0.2);
-        }
-
-        .results-header h3 {
-          margin: 0;
-          color: #3a00bb;
-          font-size: 1.5rem;
-        }
-
-        .cached-badge {
-          background: linear-gradient(135deg, #0080ff 0%, #00a2ff 100%);
-          color: white;
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          font-size: 0.9rem;
-          font-weight: 600;
-          box-shadow: 0 2px 8px rgba(0, 128, 255, 0.3);
-        }
-
-        .results-grid {
-          display: grid;
-          gap: 1.5rem;
-        }
-
-        .part-card {
-          border: 2px solid rgba(0, 162, 255, 0.2);
-          border-radius: 16px;
-          padding: 1.75rem;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          background: white;
-        }
-
-        .part-card:hover {
-          border-color: #0055f4;
-          box-shadow: 0 8px 32px rgba(0, 85, 244, 0.2);
-          transform: translateY(-4px);
-        }
-
-        .part-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1.25rem;
-          gap: 1rem;
-        }
-
-        .part-header h4 {
-          margin: 0;
-          color: #3a00bb;
-          font-size: 1.3rem;
-        }
-
-        .score {
-          background: #0080ff;
-          color: white;
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          font-size: 0.9rem;
-          font-weight: 600;
-          white-space: nowrap;
-          box-shadow: 0 2px 8px rgba(0, 128, 255, 0.3);
-        }
-
-        .part-info {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 0.75rem;
-          margin-bottom: 1.25rem;
-          padding-bottom: 1.25rem;
-          border-bottom: 2px solid rgba(0, 162, 255, 0.1);
-        }
-
-        .part-info p {
-          margin: 0;
-          color: #555;
-          font-size: 0.95rem;
-        }
-
-        .part-info strong {
-          color: #0055f4;
-        }
-
-        .ai-reason {
-          background: rgba(0, 162, 255, 0.08);
-          padding: 1.25rem;
-          border-radius: 12px;
-          margin-bottom: 1.25rem;
-          border-left: 4px solid #00a2ff;
-        }
-
-        .ai-reason strong {
-          display: block;
-          margin-bottom: 0.75rem;
-          color: #0055f4;
-          font-size: 1rem;
-        }
-
-        .ai-reason p {
-          margin: 0;
-          color: #333;
-          line-height: 1.6;
-        }
-
-        .detail-button {
-          width: 100%;
-          padding: 1rem;
-          background: white;
-          border: 2px solid #0055f4;
-          color: #0055f4;
-          border-radius: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          font-size: 1rem;
-        }
-
-        .detail-button:hover {
-          background: #0055f4;
-          color: white;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 16px rgba(0, 85, 244, 0.3);
-        }
-
-        /* Examples Sidebar */
-        .examples-sidebar {
+        /* 왼쪽 필터 사이드바 */
+        .filter-sidebar {
           position: relative;
         }
 
-        .sidebar-sticky {
+        .filter-sticky {
           position: sticky;
           top: 100px;
           background: white;
           border-radius: 16px;
           padding: 1.5rem;
-          box-shadow: 0 8px 32px rgba(58, 0, 187, 0.12);
-          border: 1px solid rgba(0, 85, 244, 0.1);
-          max-height: calc(100vh - 120px);
-          overflow-y: auto;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         }
 
-        .sidebar-sticky::-webkit-scrollbar {
-          width: 6px;
+        .search-box-compact {
+          margin-bottom: 2rem;
+          padding-bottom: 1.5rem;
+          border-bottom: 1px solid #e5e7eb;
         }
 
-        .sidebar-sticky::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-
-        .sidebar-sticky::-webkit-scrollbar-thumb {
-          background: #0080ff;
-          border-radius: 10px;
-        }
-
-        .sidebar-sticky::-webkit-scrollbar-thumb:hover {
-          background: #0055f4;
-        }
-
-        .sidebar-title {
-          margin: 0 0 0.5rem 0;
+        .search-box-compact h3 {
+          margin: 0 0 1rem 0;
           color: #3a00bb;
-          font-size: 1.3rem;
+          font-size: 1.1rem;
           font-weight: 700;
         }
 
-        .sidebar-subtitle {
-          margin: 0 0 1.5rem 0;
-          color: #64748b;
-          font-size: 0.875rem;
-        }
-
-        .examples-list {
+        .search-box-compact form {
           display: flex;
           flex-direction: column;
-          gap: 1rem;
-        }
-
-        .example-card {
-          padding: 1.25rem;
-          background: rgba(0, 128, 255, 0.03);
-          border-radius: 12px;
-          border: 1px solid rgba(0, 128, 255, 0.15);
-          transition: all 0.3s ease;
-        }
-
-        .example-card:hover {
-          background: rgba(0, 128, 255, 0.06);
-          border-color: #0080ff;
-          transform: translateX(-4px);
-        }
-
-        .example-query {
-          display: flex;
           gap: 0.75rem;
-          margin-bottom: 0.75rem;
         }
 
-        .query-icon {
-          font-size: 1.25rem;
-          flex-shrink: 0;
-        }
-
-        .example-query p {
-          margin: 0;
-          color: #333;
+        .search-box-compact textarea {
+          width: 100%;
+          padding: 0.75rem;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
           font-size: 0.875rem;
-          line-height: 1.5;
+          font-family: inherit;
+          resize: none;
+          transition: all 0.2s ease;
         }
 
-        .example-arrow {
-          text-align: center;
-          color: #0080ff;
-          font-size: 1.25rem;
-          font-weight: bold;
-          margin: 0.5rem 0;
+        .search-box-compact textarea:focus {
+          outline: none;
+          border-color: #0055f4;
+          box-shadow: 0 0 0 3px rgba(0, 85, 244, 0.1);
         }
 
-        .example-result {
+        .search-box-compact button[type="submit"] {
+          padding: 0.75rem 1rem;
+          background: #0055f4;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .search-box-compact button[type="submit"]:hover:not(:disabled) {
+          background: #0040c0;
+        }
+
+        .search-box-compact button[type="submit"]:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        /* 필터 섹션 */
+        .filter-section {
+          margin-bottom: 2rem;
+        }
+
+        .filter-section h3 {
+          margin: 0 0 1rem 0;
+          color: #1f2937;
+          font-size: 0.95rem;
+          font-weight: 700;
+        }
+
+        .category-filters,
+        .price-filters {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .category-btn,
+        .price-btn {
+          padding: 0.75rem 1rem;
           background: white;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #374151;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-align: left;
+        }
+
+        .category-btn:hover,
+        .price-btn:hover {
+          border-color: #0055f4;
+          color: #0055f4;
+        }
+
+        .category-btn.active,
+        .price-btn.active {
+          background: #0055f4;
+          border-color: #0055f4;
+          color: white;
+          font-weight: 600;
+        }
+
+        /* 중앙 메인 영역 */
+        .parts-main {
+          min-width: 0;
+        }
+
+        .error-message {
+          background: rgba(255, 82, 82, 0.1);
+          color: #d32f2f;
           padding: 1rem;
           border-radius: 8px;
-          border: 1px solid rgba(0, 162, 255, 0.2);
+          margin-bottom: 1rem;
+          border-left: 4px solid #d32f2f;
+          font-size: 0.875rem;
         }
 
-        .result-header {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin-bottom: 0.75rem;
+        .parts-header,
+        .results-header {
+          margin-bottom: 1.5rem;
         }
 
-        .result-icon {
-          color: #00dcb4;
-          font-size: 1.125rem;
+        .parts-header h2,
+        .results-header h2 {
+          margin: 0;
+          color: #1f2937;
+          font-size: 1.5rem;
+          font-weight: 700;
         }
 
-        .result-header strong {
-          color: #0055f4;
-          font-size: 0.95rem;
-        }
-
-        .result-details {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-        }
-
-        .detail-badge {
-          padding: 0.25rem 0.75rem;
-          background: rgba(0, 128, 255, 0.1);
-          color: #0080ff;
+        .cached-badge {
+          background: #0080ff;
+          color: white;
+          padding: 0.375rem 0.75rem;
           border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          margin-left: 0.75rem;
+        }
+
+        /* 부품 그리드 - 당근 스타일 */
+        .parts-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 1.25rem;
+        }
+
+        .part-card {
+          background: white;
+          border-radius: 12px;
+          overflow: hidden;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: 1px solid #e5e7eb;
+        }
+
+        .part-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+          border-color: #0055f4;
+        }
+
+        .part-image {
+          position: relative;
+          width: 100%;
+          height: 200px;
+          overflow: hidden;
+          background: #f3f4f6;
+        }
+
+        .part-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .quantity-badge {
+          position: absolute;
+          bottom: 8px;
+          right: 8px;
+          background: rgba(0, 0, 0, 0.75);
+          color: white;
+          padding: 0.375rem 0.75rem;
+          border-radius: 6px;
           font-size: 0.75rem;
           font-weight: 600;
         }
 
-        .score-badge {
-          padding: 0.25rem 0.75rem;
-          background: rgba(0, 220, 180, 0.15);
-          color: #00a88f;
+        .part-card .part-info {
+          padding: 1rem;
+        }
+
+        .part-card .part-info h4 {
+          margin: 0 0 0.5rem 0;
+          color: #1f2937;
+          font-size: 1rem;
+          font-weight: 700;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .part-card .manufacturer {
+          margin: 0 0 0.5rem 0;
+          color: #6b7280;
+          font-size: 0.875rem;
+        }
+
+        .part-card .price {
+          margin: 0 0 0.75rem 0;
+          color: #1f2937;
+          font-size: 1.125rem;
+          font-weight: 700;
+        }
+
+        .spec-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.375rem;
+        }
+
+        .spec-tag,
+        .year-tag {
+          padding: 0.25rem 0.625rem;
+          background: #f3f4f6;
+          color: #374151;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          font-weight: 500;
+        }
+
+        .year-tag {
+          background: #dbeafe;
+          color: #1e40af;
+        }
+
+        /* AI 검색 결과 카드 */
+        .part-card-ai {
+          position: relative;
+          background: white;
+          border: 2px solid #0080ff;
+          border-radius: 12px;
+          padding: 1.25rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .part-card-ai:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 24px rgba(0, 128, 255, 0.2);
+        }
+
+        .ai-score-badge {
+          position: absolute;
+          top: -10px;
+          right: 12px;
+          background: linear-gradient(135deg, #0055f4, #0080ff);
+          color: white;
+          padding: 0.375rem 0.875rem;
           border-radius: 12px;
           font-size: 0.75rem;
           font-weight: 700;
+          box-shadow: 0 4px 8px rgba(0, 85, 244, 0.3);
+        }
+
+        .part-card-ai .part-info h4 {
+          margin: 0 0 0.5rem 0;
+          color: #1f2937;
+          font-size: 1.125rem;
+          font-weight: 700;
+        }
+
+        .part-card-ai .manufacturer {
+          margin: 0 0 0.5rem 0;
+          color: #6b7280;
+          font-size: 0.875rem;
+        }
+
+        .part-card-ai .price {
+          margin: 0 0 0.75rem 0;
+          color: #0055f4;
+          font-size: 1.25rem;
+          font-weight: 700;
+        }
+
+        .part-card-ai .ai-reason {
+          margin: 0;
+          padding: 0.75rem;
+          background: rgba(0, 128, 255, 0.08);
+          border-radius: 8px;
+          color: #374151;
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+
+        /* 오른쪽 예시 사이드바 (축소) */
+        .examples-sidebar-compact {
+          position: relative;
+        }
+
+        .examples-sidebar-compact .sidebar-sticky {
+          position: sticky;
+          top: 100px;
+          background: white;
+          border-radius: 12px;
+          padding: 1.25rem;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+          max-height: calc(100vh - 120px);
+          overflow-y: auto;
+        }
+
+        .examples-sidebar-compact h3 {
+          margin: 0 0 1rem 0;
+          color: #1f2937;
+          font-size: 1rem;
+          font-weight: 700;
+        }
+
+        .examples-sidebar-compact .examples-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .example-card-compact {
+          padding: 0.875rem;
+          background: #f9fafb;
+          border-radius: 8px;
+          border: 1px solid #e5e7eb;
+          transition: all 0.2s ease;
+        }
+
+        .example-card-compact:hover {
+          background: #f3f4f6;
+          border-color: #d1d5db;
+        }
+
+        .example-card-compact .example-query {
+          margin-bottom: 0.625rem;
+        }
+
+        .example-card-compact .example-query p {
+          margin: 0;
+          color: #4b5563;
+          font-size: 0.75rem;
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .example-card-compact .example-result {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 0.5rem;
+          padding-top: 0.5rem;
+          border-top: 1px solid #e5e7eb;
+        }
+
+        .example-card-compact .example-result strong {
+          color: #1f2937;
+          font-size: 0.75rem;
+          font-weight: 600;
+          flex: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .example-card-compact .score-badge {
+          padding: 0.25rem 0.5rem;
+          background: #dbeafe;
+          color: #1e40af;
+          border-radius: 6px;
+          font-size: 0.6875rem;
+          font-weight: 700;
+          flex-shrink: 0;
+        }
+
+        @media (max-width: 1024px) {
+          .search-layout {
+            grid-template-columns: 250px 1fr;
+            gap: 1rem;
+          }
+
+          .examples-sidebar-compact {
+            display: none;
+          }
+
+          .parts-grid {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+          }
         }
 
         @media (max-width: 768px) {
@@ -660,49 +815,28 @@ export default function BuyerSearch() {
           .search-layout {
             grid-template-columns: 1fr;
             padding: 1rem;
-          }
-
-          .search-main {
-            order: 2;
-          }
-
-          .examples-sidebar {
-            order: 1;
-            margin-bottom: 2rem;
-          }
-
-          .sidebar-sticky {
-            position: static;
-            max-height: 500px;
-          }
-
-          .search-box {
-            padding: 1.5rem;
-          }
-
-          .search-box h2 {
-            font-size: 1.3rem;
-          }
-
-          .results {
-            padding: 1.5rem;
-          }
-
-          .results-header {
-            flex-direction: column;
-            align-items: flex-start;
             gap: 1rem;
           }
 
-          .part-info {
-            grid-template-columns: 1fr;
-            gap: 0.5rem;
+          .filter-sidebar {
+            order: 2;
           }
 
-          .part-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
+          .parts-main {
+            order: 1;
+          }
+
+          .filter-sticky {
+            position: static;
+          }
+
+          .parts-grid {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 0.875rem;
+          }
+
+          .part-image {
+            height: 150px;
           }
 
           .back-button {
@@ -712,17 +846,16 @@ export default function BuyerSearch() {
         }
 
         @media (max-width: 480px) {
-          .search-box h2 {
-            font-size: 1.1rem;
+          .parts-grid {
+            grid-template-columns: repeat(2, 1fr);
           }
 
-          button[type="submit"] {
-            padding: 1rem 1.5rem;
+          .part-card .part-info h4 {
+            font-size: 0.875rem;
+          }
+
+          .part-card .price {
             font-size: 1rem;
-          }
-
-          .part-header h4 {
-            font-size: 1.1rem;
           }
         }
       `}</style>
