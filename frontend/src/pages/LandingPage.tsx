@@ -430,10 +430,12 @@ export default function LandingPage() {
         .entry-card {
           background: white;
           border-radius: 24px;
-          padding: 2.5rem;
+          padding: 2.5rem 1.5rem 1.5rem;
           border: 2px solid #e2e8f0;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer;
+          position: relative;
+          min-height: 280px;
         }
 
         .entry-card:hover {
@@ -468,16 +470,19 @@ export default function LandingPage() {
         }
 
         .entry-card h3 {
-          font-size: 1.75rem;
+          font-size: 2rem;
           font-weight: 700;
           color: #1e293b;
-          margin-bottom: 1rem;
+          margin-bottom: 0.75rem;
+          padding-right: 75px; /* 아이콘 너비(60px) + 여백(15px) */
         }
 
         .entry-card p {
           color: #64748b;
           margin-bottom: 1.5rem;
           line-height: 1.6;
+          padding-right: 75px; /* 아이콘 너비(60px) + 여백(15px) */
+          margin-bottom: 1rem; /* 버튼이 위치할 하단 공간 확보 */
         }
 
         .entry-features {
@@ -540,8 +545,8 @@ export default function LandingPage() {
 
         /* Toss Style - Entry Components */
         .entry-icon-large {
-          width: 80px;
-          height: 80px;
+          width: 60px;
+          height: 60px;
           border-radius: 50%;
           background: #0055f4;
           display: flex;
@@ -549,16 +554,20 @@ export default function LandingPage() {
           justify-content: center;
           margin: 0 auto 2rem;
           color: white;
+          position: absolute;   /* absolute 포지션으로 변경 */
+          top: 1.5rem;        /* 상단에서 1.5rem (패딩값) */
+          right: 1.5rem;       /* 우측에서 1.5rem (패딩값) */
+          margin: 0;          /* 기존 margin 제거 */
         }
 
         .entry-icon-large svg {
-          width: 40px;
-          height: 40px;
+          width: 32px;
+          height: 32px;
         }
 
         .entry-button-large {
-          width: 100%;
-          padding: 1.25rem 2rem;
+          width: auto;
+          padding: 1rem 1.5rem;
           background: #0055f4;
           color: white;
           border: none;
@@ -568,6 +577,11 @@ export default function LandingPage() {
           cursor: pointer;
           transition: all 0.2s;
           margin-top: 2rem;
+          position: absolute; /* absolute 포지션으로 변경 */
+          bottom: 1.5rem;     /* 하단에서 1.5rem (패딩값) */
+          left: 1.5rem;       /* 좌측에서 1.5rem (패딩값) */
+          right: 1.5rem;      /* 우측에서 1.5rem (패딩값) */
+          margin-top: 0;      /* 기존 margin-top 제거 */
         }
 
         .entry-button-large:hover {
@@ -582,6 +596,7 @@ export default function LandingPage() {
           display: flex;
           flex-direction: column;
           gap: 1.5rem;
+          max-width: 500px;
         }
 
         .features-cards-wrapper {
@@ -665,7 +680,7 @@ export default function LandingPage() {
 
         .feature-card-large {
           background: white;
-          padding: 3rem;
+          padding: 2rem;
           border-radius: 24px;
           text-align: center;
           transition: all 0.3s;
@@ -695,15 +710,15 @@ export default function LandingPage() {
         }
 
         .feature-card-large h3 {
-          font-size: 1.5rem;
+          font-size: 1.25rem;
           font-weight: 700;
           color: #191F28;
-          margin-bottom: 1rem;
+          margin-bottom: 0.75rem;
         }
 
         .feature-card-large p {
           color: #4E5968;
-          line-height: 1.7;
+          line-height: 1.6;
           font-size: 1.0625rem;
         }
 
