@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
   const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
@@ -41,6 +43,27 @@ export default function LandingPage() {
 
   return (
     <div className="landing-page">
+      {/* Auth Header */}
+      <div className="auth-header">
+        {isAuthenticated ? (
+          <div className="auth-user-info">
+            <span className="user-greeting">안녕하세요, {user?.name}님</span>
+            <button onClick={logout} className="auth-button logout-button">
+              로그아웃
+            </button>
+          </div>
+        ) : (
+          <div className="auth-buttons">
+            <button onClick={() => navigate('/login')} className="auth-button login-button">
+              로그인
+            </button>
+            <button onClick={() => navigate('/signup')} className="auth-button signup-button">
+              회원가입
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Hero Section with Parallax */}
       <section className="hero" style={{ transform: `translateY(${scrollY * 0.3}px)` }}>
         <div className="hero-content">
@@ -247,6 +270,72 @@ export default function LandingPage() {
           background: #ffffff;
           font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
           overflow-x: hidden;
+        }
+
+        /* Auth Header */
+        .auth-header {
+          position: fixed;
+          top: 0;
+          right: 0;
+          z-index: 1000;
+          padding: 1rem 2rem;
+        }
+
+        .auth-buttons, .auth-user-info {
+          display: flex;
+          gap: 0.75rem;
+          align-items: center;
+        }
+
+        .user-greeting {
+          color: #1f2937;
+          font-weight: 600;
+          font-size: 0.9375rem;
+          background: white;
+          padding: 0.5rem 1rem;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-button {
+          padding: 0.625rem 1.25rem;
+          border: none;
+          border-radius: 8px;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .login-button {
+          background: white;
+          color: #0055f4;
+          border: 2px solid #0055f4;
+        }
+
+        .login-button:hover {
+          background: #0055f4;
+          color: white;
+        }
+
+        .signup-button {
+          background: linear-gradient(135deg, #0055f4, #0080ff);
+          color: white;
+        }
+
+        .signup-button:hover {
+          background: linear-gradient(135deg, #0040c0, #0060dd);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 85, 244, 0.3);
+        }
+
+        .logout-button {
+          background: #ef4444;
+          color: white;
+        }
+
+        .logout-button:hover {
+          background: #dc2626;
         }
 
         .container {

@@ -26,10 +26,91 @@ const TABLE_NAME = 'eecar-parts-table-local';
 // Mock data store (in-memory fallback)
 const mockParts = [];
 const mockSearchCache = new Map();
+const mockUsers = new Map(); // email -> user object
 
 // ==================== HEALTH CHECK ====================
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'EECAR Local API', timestamp: new Date().toISOString() });
+});
+
+// ==================== AUTHENTICATION API ====================
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { email, password, name, role, companyName } = req.body;
+
+    if (!email || !password || !name || !role) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Check if user already exists
+    if (mockUsers.has(email)) {
+      return res.status(400).json({ error: '이미 등록된 이메일입니다' });
+    }
+
+    // Create user
+    const user = {
+      id: `user-${Date.now()}`,
+      email,
+      name,
+      role,
+      companyName: companyName || undefined,
+      createdAt: new Date().toISOString(),
+    };
+
+    mockUsers.set(email, { ...user, password }); // Store with password
+
+    // Generate simple token (not real JWT for simplicity)
+    const token = Buffer.from(`${user.id}:${email}:${Date.now()}`).toString('base64');
+
+    console.log(`[AUTH] User registered: ${email} (${role})`);
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      token,
+      user: { ...user }, // Don't send password
+    });
+  } catch (error) {
+    console.error('[AUTH ERROR]', error);
+    res.status(500).json({ error: 'Failed to register user', message: error.message });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    // Check if user exists
+    const storedUser = mockUsers.get(email);
+    if (!storedUser) {
+      return res.status(401).json({ error: '이메일 또는 비밀번호가 잘못되었습니다' });
+    }
+
+    // Check password
+    if (storedUser.password !== password) {
+      return res.status(401).json({ error: '이메일 또는 비밀번호가 잘못되었습니다' });
+    }
+
+    // Generate token
+    const token = Buffer.from(`${storedUser.id}:${email}:${Date.now()}`).toString('base64');
+
+    // Remove password from response
+    const { password: _, ...user } = storedUser;
+
+    console.log(`[AUTH] User logged in: ${email}`);
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user,
+    });
+  } catch (error) {
+    console.error('[AUTH ERROR]', error);
+    res.status(500).json({ error: 'Failed to login', message: error.message });
+  }
 });
 
 // ==================== SEARCH API ====================
