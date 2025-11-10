@@ -76,34 +76,38 @@ export default function LandingPage() {
       {/* Entry Points - Toss Style */}
       <section className="entry-section animate-on-scroll">
         <div className="container">
-          <h2 className="section-title-large">EV 부품 거래,<br/>이제 EECAR에서</h2>
-          <p className="section-subtitle">AI가 찾아주는 최적의 부품, 안전한 B2B 거래</p>
-
-          <div className="entry-grid">
-            <div className="entry-card" onClick={() => navigate('/buyer')}>
-              <div className="entry-icon-large">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <h3>AI로 부품 찾기</h3>
-              <p>자연어로 물어보면 AI가 최적의 부품을 추천합니다</p>
-              <button className="entry-button-large">
-                부품 검색하기 →
-              </button>
+          <div className="section-layout-left">
+            <div className="section-text-content">
+              <h2 className="section-title-large-left">EV 부품 거래,<br/>이제 EECAR에서</h2>
+              <p className="section-subtitle-left">AI가 찾아주는 최적의 부품, 안전한 B2B 거래</p>
             </div>
 
-            <div className="entry-card" onClick={() => navigate('/seller')}>
-              <div className="entry-icon-large">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 4v16m8-8H4" />
-                </svg>
+            <div className="entry-cards-wrapper">
+              <div className="entry-card" onClick={() => navigate('/buyer')}>
+                <div className="entry-icon-large">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3>AI로 부품 찾기</h3>
+                <p>자연어로 물어보면 AI가 최적의 부품을 추천합니다</p>
+                <button className="entry-button-large">
+                  부품 검색하기 →
+                </button>
               </div>
-              <h3>부품 등록하고 판매하기</h3>
-              <p>간편한 등록으로 구매 제안을 받아보세요</p>
-              <button className="entry-button-large">
-                부품 등록하기 →
-              </button>
+
+              <div className="entry-card" onClick={() => navigate('/seller')}>
+                <div className="entry-icon-large">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <h3>부품 등록하고 판매하기</h3>
+                <p>간편한 등록으로 구매 제안을 받아보세요</p>
+                <button className="entry-button-large">
+                  부품 등록하기 →
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -112,48 +116,52 @@ export default function LandingPage() {
       {/* Features Section - Toss Style */}
       <section className="features-section animate-on-scroll">
         <div className="container">
-          <h2 className="section-title-large">필요한 부품,<br/>AI가 찾아드립니다</h2>
-          <p className="section-subtitle">검증된 데이터로 안전하게, RAG 기술로 정확하게</p>
-
-          <div className="features-grid-simple">
-            <div className="feature-card-large animate-on-scroll">
-              <div className="feature-icon-xl">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
+          <div className="section-layout-right">
+            <div className="features-cards-wrapper">
+              <div className="feature-card-large animate-on-scroll">
+                <div className="feature-icon-xl">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <h3>AI 기반 검색</h3>
+                <p>자연어로 물어보면 RAG 시스템이 최적의 부품을 찾아드립니다</p>
               </div>
-              <h3>AI 기반 검색</h3>
-              <p>자연어로 물어보면 RAG 시스템이 최적의 부품을 찾아드립니다</p>
+
+              <div className="feature-card-large animate-on-scroll">
+                <div className="feature-icon-xl">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h3>검증된 물성 데이터</h3>
+                <p>부품별 물성 데이터를 체계적으로 관리하고 제공합니다</p>
+              </div>
+
+              <div className="feature-card-large animate-on-scroll">
+                <div className="feature-icon-xl">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </div>
+                <h3>스마트 알림</h3>
+                <p>원하는 부품이 등록되면 즉시 알림을 받아보세요</p>
+              </div>
+
+              <div className="feature-card-large animate-on-scroll">
+                <div className="feature-icon-xl">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <h3>안전한 B2B 거래</h3>
+                <p>기업 간 계약과 협상을 안전하게 지원합니다</p>
+              </div>
             </div>
 
-            <div className="feature-card-large animate-on-scroll">
-              <div className="feature-icon-xl">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3>검증된 물성 데이터</h3>
-              <p>부품별 물성 데이터를 체계적으로 관리하고 제공합니다</p>
-            </div>
-
-            <div className="feature-card-large animate-on-scroll">
-              <div className="feature-icon-xl">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-              </div>
-              <h3>스마트 알림</h3>
-              <p>원하는 부품이 등록되면 즉시 알림을 받아보세요</p>
-            </div>
-
-            <div className="feature-card-large animate-on-scroll">
-              <div className="feature-icon-xl">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3>안전한 B2B 거래</h3>
-              <p>기업 간 계약과 협상을 안전하게 지원합니다</p>
+            <div className="section-text-content">
+              <h2 className="section-title-large-left">필요한 부품,<br/>AI가 찾아드립니다</h2>
+              <p className="section-subtitle-left">검증된 데이터로 안전하게, RAG 기술로 정확하게</p>
             </div>
           </div>
         </div>
@@ -162,26 +170,30 @@ export default function LandingPage() {
       {/* Workflow - Toss Style */}
       <section className="workflow-section animate-on-scroll">
         <div className="container">
-          <h2 className="section-title-large">간편하게, 안전하게</h2>
-          <p className="section-subtitle">3단계로 끝나는 부품 거래</p>
-
-          <div className="workflow-grid">
-            <div className="workflow-step animate-on-scroll">
-              <div className="step-number">①</div>
-              <h3>AI가 부품을 찾아드립니다</h3>
-              <p>자연어로 물어보면 최적의 부품을 추천받습니다</p>
+          <div className="section-layout-left">
+            <div className="section-text-content">
+              <h2 className="section-title-large-left">간편하게,<br/>안전하게</h2>
+              <p className="section-subtitle-left">3단계로 끝나는 부품 거래</p>
             </div>
 
-            <div className="workflow-step animate-on-scroll">
-              <div className="step-number">②</div>
-              <h3>물성 데이터를 확인하세요</h3>
-              <p>검증된 데이터로 안전하게 비교하고 선택합니다</p>
-            </div>
+            <div className="workflow-steps-wrapper">
+              <div className="workflow-step animate-on-scroll">
+                <div className="step-number">①</div>
+                <h3>AI가 부품을 찾아드립니다</h3>
+                <p>자연어로 물어보면 최적의 부품을 추천받습니다</p>
+              </div>
 
-            <div className="workflow-step animate-on-scroll">
-              <div className="step-number">③</div>
-              <h3>계약하고 거래 완료</h3>
-              <p>안전한 B2B 프로세스로 거래를 진행합니다</p>
+              <div className="workflow-step animate-on-scroll">
+                <div className="step-number">②</div>
+                <h3>물성 데이터를 확인하세요</h3>
+                <p>검증된 데이터로 안전하게 비교하고 선택합니다</p>
+              </div>
+
+              <div className="workflow-step animate-on-scroll">
+                <div className="step-number">③</div>
+                <h3>계약하고 거래 완료</h3>
+                <p>안전한 B2B 프로세스로 거래를 진행합니다</p>
+              </div>
             </div>
           </div>
         </div>
@@ -372,6 +384,43 @@ export default function LandingPage() {
           font-weight: 500;
         }
 
+        /* Left/Right Layout System */
+        .section-layout-left {
+          display: flex;
+          align-items: center;
+          gap: 4rem;
+        }
+
+        .section-layout-right {
+          display: flex;
+          align-items: center;
+          gap: 4rem;
+        }
+
+        .section-text-content {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .section-title-large-left {
+          text-align: left;
+          font-size: 3.5rem;
+          font-weight: 800;
+          color: #191F28;
+          margin-bottom: 1.5rem;
+          line-height: 1.2;
+          letter-spacing: -0.03em;
+        }
+
+        .section-subtitle-left {
+          text-align: left;
+          font-size: 1.25rem;
+          color: #4E5968;
+          margin-bottom: 0;
+          font-weight: 500;
+          line-height: 1.6;
+        }
+
         .entry-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -525,6 +574,28 @@ export default function LandingPage() {
           background: #0040c0;
           transform: translateY(-2px);
           box-shadow: 0 4px 12px rgba(0, 85, 244, 0.3);
+        }
+
+        /* Wrapper Styles */
+        .entry-cards-wrapper {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .features-cards-wrapper {
+          flex: 1;
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1.5rem;
+        }
+
+        .workflow-steps-wrapper {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
         }
 
         /* Features Section */
@@ -853,26 +924,26 @@ export default function LandingPage() {
         }
 
         .workflow-step {
-          text-align: center;
+          text-align: left;
         }
 
         .step-number {
-          font-size: 3.5rem;
+          font-size: 3rem;
           font-weight: 800;
           color: #0055f4;
-          margin-bottom: 1.5rem;
+          margin-bottom: 1rem;
           line-height: 1;
         }
 
         .workflow-step h3 {
-          font-size: 1.5rem;
+          font-size: 1.375rem;
           font-weight: 700;
           color: #191F28;
-          margin-bottom: 1rem;
+          margin-bottom: 0.75rem;
         }
 
         .workflow-step p {
-          font-size: 1.0625rem;
+          font-size: 1rem;
           color: #4E5968;
           line-height: 1.6;
         }
@@ -1093,6 +1164,41 @@ export default function LandingPage() {
             font-size: 1rem;
           }
 
+          /* Left/Right Layout - Stack vertically on mobile */
+          .section-layout-left,
+          .section-layout-right {
+            flex-direction: column;
+            gap: 3rem;
+          }
+
+          .section-title-large-left {
+            font-size: 2.5rem;
+            text-align: center;
+          }
+
+          .section-subtitle-left {
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 2rem;
+          }
+
+          .entry-cards-wrapper {
+            width: 100%;
+          }
+
+          .features-cards-wrapper {
+            grid-template-columns: 1fr;
+            width: 100%;
+          }
+
+          .workflow-steps-wrapper {
+            width: 100%;
+          }
+
+          .workflow-step {
+            text-align: center;
+          }
+
           .features-grid-simple {
             grid-template-columns: 1fr;
           }
@@ -1103,7 +1209,7 @@ export default function LandingPage() {
           }
 
           .step-number {
-            font-size: 3rem;
+            font-size: 2.5rem;
           }
 
           .cta-title-large {
