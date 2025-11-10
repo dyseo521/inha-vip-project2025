@@ -248,25 +248,25 @@ export default function BuyerSearch() {
               <h3>가격 범위</h3>
               <div className="price-filters">
                 <button
-                  className={`price-btn ${priceRange[1] === 20000000 ? 'active' : ''}`}
+                  className={`price-btn ${priceRange[0] === 0 && priceRange[1] === 20000000 ? 'active' : ''}`}
                   onClick={() => setPriceRange([0, 20000000])}
                 >
                   전체
                 </button>
                 <button
-                  className={`price-btn ${priceRange[1] === 5000000 ? 'active' : ''}`}
+                  className={`price-btn ${priceRange[0] === 0 && priceRange[1] === 5000000 ? 'active' : ''}`}
                   onClick={() => setPriceRange([0, 5000000])}
                 >
                   500만원 이하
                 </button>
                 <button
-                  className={`price-btn ${priceRange[1] === 10000000 && priceRange[0] === 5000000 ? 'active' : ''}`}
+                  className={`price-btn ${priceRange[0] === 5000000 && priceRange[1] === 10000000 ? 'active' : ''}`}
                   onClick={() => setPriceRange([5000000, 10000000])}
                 >
                   500만원-1000만원
                 </button>
                 <button
-                  className={`price-btn ${priceRange[0] === 10000000 ? 'active' : ''}`}
+                  className={`price-btn ${priceRange[0] === 10000000 && priceRange[1] === 20000000 ? 'active' : ''}`}
                   onClick={() => setPriceRange([10000000, 20000000])}
                 >
                   1000만원 이상

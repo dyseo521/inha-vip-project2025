@@ -371,7 +371,7 @@ app.listen(PORT, () => {
 
   // Generate initial mock data
   console.log('📦 Generating initial mock data...');
-  ['battery', 'motor', 'inverter'].forEach(category => {
+  ['battery', 'motor', 'inverter', 'body'].forEach(category => {
     for (let i = 0; i < 3; i++) {
       const partId = `initial-${category}-${i}`;
       mockParts.push(generateMockPart(category, partId));
