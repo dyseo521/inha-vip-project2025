@@ -568,25 +568,50 @@ export default function LandingPage() {
         .entry-button-large {
           width: auto;
           padding: 1rem 1.5rem;
-          background: #0055f4;
+          background: linear-gradient(135deg, #0055f4 0%, #0080ff 100%);
           color: white;
           border: none;
           border-radius: 12px;
           font-size: 1.125rem;
           font-weight: 700;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           margin-top: 2rem;
-          position: absolute; /* absolute 포지션으로 변경 */
-          bottom: 1.5rem;     /* 하단에서 1.5rem (패딩값) */
-          left: 1.5rem;       /* 좌측에서 1.5rem (패딩값) */
-          right: 1.5rem;      /* 우측에서 1.5rem (패딩값) */
-          margin-top: 0;      /* 기존 margin-top 제거 */
+          position: absolute;
+          bottom: 1.5rem;
+          left: 1.5rem;
+          right: 1.5rem;
+          margin-top: 0;
+          box-shadow: 0 2px 8px rgba(0, 85, 244, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          overflow: hidden;
+        }
+
+        .entry-button-large::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transition: left 0.5s;
+        }
+
+        .entry-button-large:hover::before {
+          left: 100%;
         }
 
         .entry-button-large:hover {
-          background: #0040c0;
-          transform: translateY(-2px);
+          background: linear-gradient(135deg, #0040c0 0%, #0060dd 100%);
+          transform: translateY(-3px);
+          box-shadow: 0 8px 20px rgba(0, 85, 244, 0.4);
+        }
+
+        .entry-button-large:active {
+          transform: translateY(-1px);
           box-shadow: 0 4px 12px rgba(0, 85, 244, 0.3);
         }
 
