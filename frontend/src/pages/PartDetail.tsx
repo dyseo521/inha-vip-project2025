@@ -59,6 +59,111 @@ export default function PartDetail() {
     enabled: !!id,
   });
 
+  // Proposal 생성 mutation - Hook은 항상 최상위에서 호출
+  const createProposalMutation = useMutation({
+    mutationFn: async (proposal: any) => {
+      const response = await fetch('/api/proposals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(proposal),
+      });
+
+      if (!response.ok) {
+        throw new Error('제안 전송에 실패했습니다');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      alert('✅ 제안이 성공적으로 전송되었습니다!');
+      setShowProposalModal(false);
+      setProposalData({
+        quantity: 1,
+        priceOffer: '',
+        message: '',
+        deliveryDate: '',
+        paymentTerms: '',
+      });
+    },
+    onError: (error: Error) => {
+      alert(`❌ 제안 전송 실패: ${error.message}`);
+    },
+  });
+
+  // 이메일 템플릿 생성 - part가 있을 때만 호출
+  const generateEmailTemplate = () => {
+    if (!part) return { subject: '', body: '' };
+
+    const subject = `[EECAR] ${part.name} 구매 문의`;
+    const body = `안녕하세요,
+
+EECAR를 통해 등록하신 '${part.name}'에 관심이 있어 연락드립니다.
+
+▪️ 구매 희망 부품: ${part.name}
+▪️ 제조사: ${part.manufacturer} / 모델: ${part.model}
+▪️ 등록 가격: ${part.price.toLocaleString()}원
+▪️ 판매자 ID: ${part.sellerId}
+
+저희는 [사용 목적을 입력해주세요]을 위해 해당 부품이 필요합니다.
+
+부품의 상세 사양, 현재 상태, 그리고 거래 조건에 대해
+미팅을 통해 논의하고 싶습니다.
+
+▪️ 연락 가능한 시간: [입력해주세요]
+▪️ 희망 미팅 방식: □ 대면  □ 화상
+
+회신 기다리겠습니다.
+감사합니다.
+
+---
+EECAR 전기차 부품 거래 플랫폼
+https://eecar.com`;
+
+    return { subject, body };
+  };
+
+  const handleOpenModal = () => {
+    const { subject, body } = generateEmailTemplate();
+    setEmailSubject(subject);
+    setEmailBody(body);
+    setShowContactModal(true);
+  };
+
+  const handleContactClick = () => {
+    // 실제 판매자 이메일이 없으므로 일반 문의로 연결
+    window.location.href = `mailto:contact@eecar.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    setShowContactModal(false);
+  };
+
+  const handleProposal = () => {
+    if (!isAuthenticated) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/login');
+      return;
+    }
+
+    if (!proposalData.priceOffer) {
+      alert('제안 가격을 입력해주세요.');
+      return;
+    }
+
+    if (!part) return;
+
+    createProposalMutation.mutate({
+      fromCompanyId: user?.id || 'unknown',
+      toCompanyId: part.sellerId || 'unknown',
+      partIds: [id],
+      proposalType: 'buy',
+      quantity: proposalData.quantity,
+      priceOffer: parseFloat(proposalData.priceOffer),
+      message: proposalData.message,
+      terms: {
+        deliveryDate: proposalData.deliveryDate,
+        paymentTerms: proposalData.paymentTerms,
+      },
+    });
+  };
+
   // 로딩 상태
   if (isLoading) {
     return (
@@ -144,107 +249,6 @@ export default function PartDetail() {
       </div>
     );
   }
-
-  // 이메일 템플릿 생성
-  const generateEmailTemplate = () => {
-    const subject = `[EECAR] ${part.name} 구매 문의`;
-    const body = `안녕하세요,
-
-EECAR를 통해 등록하신 '${part.name}'에 관심이 있어 연락드립니다.
-
-▪️ 구매 희망 부품: ${part.name}
-▪️ 제조사: ${part.manufacturer} / 모델: ${part.model}
-▪️ 등록 가격: ${part.price.toLocaleString()}원
-▪️ 판매자 ID: ${part.sellerId}
-
-저희는 [사용 목적을 입력해주세요]을 위해 해당 부품이 필요합니다.
-
-부품의 상세 사양, 현재 상태, 그리고 거래 조건에 대해
-미팅을 통해 논의하고 싶습니다.
-
-▪️ 연락 가능한 시간: [입력해주세요]
-▪️ 희망 미팅 방식: □ 대면  □ 화상
-
-회신 기다리겠습니다.
-감사합니다.
-
----
-EECAR 전기차 부품 거래 플랫폼
-https://eecar.com`;
-
-    return { subject, body };
-  };
-
-  const handleOpenModal = () => {
-    const { subject, body } = generateEmailTemplate();
-    setEmailSubject(subject);
-    setEmailBody(body);
-    setShowContactModal(true);
-  };
-
-  const handleContactClick = () => {
-    // 실제 판매자 이메일이 없으므로 일반 문의로 연결
-    window.location.href = `mailto:contact@eecar.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    setShowContactModal(false);
-  };
-
-  // Proposal 생성 mutation
-  const createProposalMutation = useMutation({
-    mutationFn: async (proposal: any) => {
-      const response = await fetch('/api/proposals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(proposal),
-      });
-
-      if (!response.ok) {
-        throw new Error('제안 전송에 실패했습니다');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      alert('✅ 제안이 성공적으로 전송되었습니다!');
-      setShowProposalModal(false);
-      setProposalData({
-        quantity: 1,
-        priceOffer: '',
-        message: '',
-        deliveryDate: '',
-        paymentTerms: '',
-      });
-    },
-    onError: (error: Error) => {
-      alert(`❌ 제안 전송 실패: ${error.message}`);
-    },
-  });
-
-  const handleProposal = () => {
-    if (!isAuthenticated) {
-      alert('로그인이 필요한 서비스입니다.');
-      navigate('/login');
-      return;
-    }
-
-    if (!proposalData.priceOffer) {
-      alert('제안 가격을 입력해주세요.');
-      return;
-    }
-
-    createProposalMutation.mutate({
-      fromCompanyId: user?.id || 'unknown',
-      toCompanyId: part?.sellerId || 'unknown',
-      partIds: [id],
-      proposalType: 'buy',
-      quantity: proposalData.quantity,
-      priceOffer: parseFloat(proposalData.priceOffer),
-      message: proposalData.message,
-      terms: {
-        deliveryDate: proposalData.deliveryDate,
-        paymentTerms: proposalData.paymentTerms,
-      },
-    });
-  };
 
   return (
     <div className="part-detail-page">

@@ -70,8 +70,14 @@ export default function BuyerSearch() {
   const { data: partsData, isLoading: isPartsLoading } = useQuery({
     queryKey: ['parts', selectedCategory],
     queryFn: async () => {
-      const category = selectedCategory === 'all' ? 'battery' : categoryMap[selectedCategory] || selectedCategory;
-      const response = await fetch(`/api/parts?category=${category}&limit=50`);
+      // 전체 카테고리인 경우 카테고리 필터 없이 모든 부품 조회
+      let url = '/api/parts?limit=50';
+      if (selectedCategory !== 'all') {
+        const category = categoryMap[selectedCategory] || selectedCategory;
+        url = `/api/parts?category=${category}&limit=50`;
+      }
+
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error('부품 목록을 불러오는데 실패했습니다');
