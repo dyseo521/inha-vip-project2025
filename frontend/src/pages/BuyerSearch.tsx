@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import type { SearchRequest, SearchResponse } from '@shared/index';
-import { mockParts } from '../data/mockParts';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import type { SearchRequest, SearchResponse, Part, WatchCriteria } from '@shared/index';
+
+// 카테고리 매핑 (한글 -> 영문)
+const categoryMap: Record<string, string> = {
+  '배터리': 'battery',
+  '모터': 'motor',
+  '인버터': 'inverter',
+  '차체': 'body',
+};
 
 export default function BuyerSearch() {
   const navigate = useNavigate();
@@ -11,6 +18,14 @@ export default function BuyerSearch() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 20000000]);
 
+  // Watch 모달 상태
+  const [showWatchModal, setShowWatchModal] = useState(false);
+  const [watchEmail, setWatchEmail] = useState('');
+  const [watchCategory, setWatchCategory] = useState<string>('');
+  const [watchMaxPrice, setWatchMaxPrice] = useState<number>(10000000);
+  const [watchKeywords, setWatchKeywords] = useState<string>('');
+
+  // AI 검색
   const { data, isLoading, error } = useQuery({
     queryKey: ['search', searchParams],
     queryFn: async () => {
@@ -31,6 +46,55 @@ export default function BuyerSearch() {
     enabled: !!searchParams,
   });
 
+  // 부품 목록 조회 (카테고리별)
+  const { data: partsData, isLoading: isPartsLoading } = useQuery({
+    queryKey: ['parts', selectedCategory],
+    queryFn: async () => {
+      const category = selectedCategory === 'all' ? 'battery' : categoryMap[selectedCategory] || selectedCategory;
+      const response = await fetch(`/api/parts?category=${category}&limit=50`);
+
+      if (!response.ok) {
+        throw new Error('부품 목록을 불러오는데 실패했습니다');
+      }
+
+      return response.json() as Promise<{ parts: Part[]; count: number }>;
+    },
+    enabled: !searchParams, // AI 검색 중이 아닐 때만 실행
+  });
+
+  // Watch 생성 mutation
+  const createWatchMutation = useMutation({
+    mutationFn: async (watchData: {
+      buyerId: string;
+      email: string;
+      criteria: WatchCriteria;
+    }) => {
+      const response = await fetch('/api/watch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(watchData),
+      });
+
+      if (!response.ok) {
+        throw new Error('알림 설정에 실패했습니다');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      alert('✅ 알림이 설정되었습니다! 조건에 맞는 부품이 등록되면 이메일로 알려드립니다.');
+      setShowWatchModal(false);
+      // Reset form
+      setWatchEmail('');
+      setWatchCategory('');
+      setWatchMaxPrice(10000000);
+      setWatchKeywords('');
+    },
+    onError: (error: Error) => {
+      alert(`❌ 알림 설정 실패: ${error.message}`);
+    },
+  });
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
@@ -38,12 +102,29 @@ export default function BuyerSearch() {
     }
   };
 
-  // 필터링된 부품 목록
-  const filteredParts = mockParts.filter(part => {
-    const categoryMatch = selectedCategory === 'all' || part.category === selectedCategory;
-    const priceMatch = part.price >= priceRange[0] && part.price <= priceRange[1];
-    return categoryMatch && priceMatch;
-  });
+  const handleCreateWatch = () => {
+    if (!watchEmail) {
+      alert('이메일을 입력해주세요.');
+      return;
+    }
+
+    const criteria: WatchCriteria = {
+      ...(watchCategory && { category: categoryMap[watchCategory] as any }),
+      ...(watchMaxPrice && { maxPrice: watchMaxPrice }),
+      ...(watchKeywords && { keywords: watchKeywords.split(',').map(k => k.trim()) }),
+    };
+
+    createWatchMutation.mutate({
+      buyerId: 'demo-buyer', // TODO: 실제 사용자 ID로 교체
+      email: watchEmail,
+      criteria,
+    });
+  };
+
+  // 가격 필터링된 부품 목록
+  const filteredParts = partsData?.parts.filter(part => {
+    return part.price >= priceRange[0] && part.price <= priceRange[1];
+  }) || [];
 
   const categories = ['all', '배터리', '모터', '인버터', '차체'];
 
@@ -98,6 +179,9 @@ export default function BuyerSearch() {
           ← 홈으로
         </button>
         <h1>부품 검색</h1>
+        <button onClick={() => setShowWatchModal(true)} className="watch-button">
+          🔔 관심 부품 알림 설정
+        </button>
       </header>
 
       <main className="search-layout">
@@ -210,33 +294,48 @@ export default function BuyerSearch() {
             <>
               <div className="parts-header">
                 <h2>등록된 부품 ({filteredParts.length}개)</h2>
+                {isPartsLoading && <span className="loading-text">로딩 중...</span>}
               </div>
 
-              <div className="parts-grid">
-                {filteredParts.map((part) => (
-                  <div
-                    key={part.id}
-                    className="part-card"
-                    onClick={() => navigate(`/parts/${part.id}`)}
-                  >
-                    <div className="part-image">
-                      <img src={part.image} alt={part.name} />
-                      <div className="quantity-badge">{part.quantity}개 재고</div>
-                    </div>
-                    <div className="part-info">
-                      <h4>{part.name}</h4>
-                      <p className="manufacturer">{part.manufacturer} · {part.model}</p>
-                      <p className="price">{part.price.toLocaleString()}원</p>
-                      <div className="spec-tags">
-                        {part.capacity && <span className="spec-tag">{part.capacity}</span>}
-                        {part.power && <span className="spec-tag">{part.power}</span>}
-                        {part.type && <span className="spec-tag">{part.type}</span>}
-                        <span className="year-tag">{part.year}년식</span>
+              {isPartsLoading ? (
+                <div className="loading-message">부품 목록을 불러오는 중...</div>
+              ) : filteredParts.length === 0 ? (
+                <div className="empty-message">
+                  <p>등록된 부품이 없습니다.</p>
+                  <p className="empty-hint">다른 카테고리를 선택해보세요.</p>
+                </div>
+              ) : (
+                <div className="parts-grid">
+                  {filteredParts.map((part) => (
+                    <div
+                      key={part.partId}
+                      className="part-card"
+                      onClick={() => navigate(`/parts/${part.partId}`)}
+                    >
+                      <div className="part-image">
+                        <img
+                          src={part.images?.[0] || '/image/placeholder.jpg'}
+                          alt={part.name}
+                          onError={(e) => {
+                            e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="280" height="200"><rect fill="%23f3f4f6" width="280" height="200"/><text x="50%" y="50%" text-anchor="middle" fill="%239ca3af" font-size="14">이미지 없음</text></svg>';
+                          }}
+                        />
+                        <div className="quantity-badge">{part.quantity}개 재고</div>
+                      </div>
+                      <div className="part-info">
+                        <h4>{part.name}</h4>
+                        <p className="manufacturer">{part.manufacturer} · {part.model}</p>
+                        <p className="price">{part.price.toLocaleString()}원</p>
+                        <div className="spec-tags">
+                          <span className="spec-tag">{part.category}</span>
+                          <span className="year-tag">{part.year}년식</span>
+                          <span className="condition-tag">{part.condition}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -264,6 +363,94 @@ export default function BuyerSearch() {
         </aside>
       </main>
 
+      {/* Watch 모달 */}
+      {showWatchModal && (
+        <div className="modal-overlay" onClick={() => setShowWatchModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>🔔 관심 부품 알림 설정</h3>
+              <button className="close-button" onClick={() => setShowWatchModal(false)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <p className="modal-description">
+                원하는 조건에 맞는 부품이 등록되면 이메일로 알려드립니다.
+              </p>
+
+              <div className="form-group">
+                <label>이메일 주소 *</label>
+                <input
+                  type="email"
+                  placeholder="example@email.com"
+                  value={watchEmail}
+                  onChange={(e) => setWatchEmail(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>카테고리</label>
+                <select
+                  value={watchCategory}
+                  onChange={(e) => setWatchCategory(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="">전체</option>
+                  {categories.filter(c => c !== 'all').map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>최대 가격 (원)</label>
+                <input
+                  type="number"
+                  placeholder="10000000"
+                  value={watchMaxPrice}
+                  onChange={(e) => setWatchMaxPrice(Number(e.target.value))}
+                  className="form-input"
+                  step="100000"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>키워드 (쉼표로 구분)</label>
+                <input
+                  type="text"
+                  placeholder="예: Tesla, 고성능, ESS"
+                  value={watchKeywords}
+                  onChange={(e) => setWatchKeywords(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+
+              <div className="modal-tip">
+                💡 조건을 입력하지 않으면 모든 부품에 대해 알림을 받습니다.
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="cancel-button"
+                onClick={() => setShowWatchModal(false)}
+              >
+                취소
+              </button>
+              <button
+                className="submit-button"
+                onClick={handleCreateWatch}
+                disabled={createWatchMutation.isPending}
+              >
+                {createWatchMutation.isPending ? '설정 중...' : '알림 설정하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .buyer-search {
           min-height: 100vh;
@@ -283,6 +470,32 @@ export default function BuyerSearch() {
           z-index: 100;
         }
 
+        .page-header h1 {
+          margin: 0;
+          color: #0055f4;
+          font-size: 1.8rem;
+          flex: 1;
+        }
+
+        .watch-button {
+          padding: 0.75rem 1.5rem;
+          background: linear-gradient(135deg, #0055f4, #0080ff);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.9rem;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 8px rgba(0, 85, 244, 0.2);
+        }
+
+        .watch-button:hover {
+          background: linear-gradient(135deg, #0040c0, #0060dd);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 85, 244, 0.3);
+        }
+
         .back-button {
           padding: 0.75rem 1.5rem;
           border: 2px solid #0055f4;
@@ -299,12 +512,6 @@ export default function BuyerSearch() {
           background: #0055f4;
           color: white;
           transform: translateX(-4px);
-        }
-
-        .page-header h1 {
-          margin: 0;
-          color: #0055f4;
-          font-size: 1.8rem;
         }
 
         .search-layout {
@@ -463,6 +670,35 @@ export default function BuyerSearch() {
           font-weight: 700;
         }
 
+        .loading-text {
+          color: #6b7280;
+          font-size: 0.875rem;
+          margin-left: 1rem;
+        }
+
+        .loading-message {
+          text-align: center;
+          padding: 3rem;
+          color: #6b7280;
+          font-size: 1rem;
+        }
+
+        .empty-message {
+          text-align: center;
+          padding: 3rem;
+          color: #6b7280;
+        }
+
+        .empty-message p {
+          margin: 0.5rem 0;
+          font-size: 1rem;
+        }
+
+        .empty-hint {
+          font-size: 0.875rem;
+          color: #9ca3af;
+        }
+
         .cached-badge {
           background: #0080ff;
           color: white;
@@ -555,7 +791,8 @@ export default function BuyerSearch() {
         }
 
         .spec-tag,
-        .year-tag {
+        .year-tag,
+        .condition-tag {
           padding: 0.25rem 0.625rem;
           background: #f3f4f6;
           color: #374151;
@@ -567,6 +804,11 @@ export default function BuyerSearch() {
         .year-tag {
           background: #dbeafe;
           color: #1e40af;
+        }
+
+        .condition-tag {
+          background: #dcfce7;
+          color: #166534;
         }
 
         /* AI 검색 결과 카드 */
@@ -769,6 +1011,10 @@ export default function BuyerSearch() {
             padding: 0.6rem 1rem;
             font-size: 0.9rem;
           }
+
+          .watch-button {
+            display: none;
+          }
         }
 
         @media (max-width: 480px) {
@@ -783,6 +1029,163 @@ export default function BuyerSearch() {
           .part-card .price {
             font-size: 1rem;
           }
+        }
+
+        /* Watch Modal */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 200;
+          padding: 1rem;
+        }
+
+        .modal-content {
+          background: white;
+          border-radius: 16px;
+          max-width: 500px;
+          width: 100%;
+          max-height: 90vh;
+          overflow-y: auto;
+        }
+
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1.5rem;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-header h3 {
+          margin: 0;
+          color: #1f2937;
+          font-size: 1.25rem;
+          font-weight: 700;
+        }
+
+        .close-button {
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          color: #9ca3af;
+          cursor: pointer;
+          padding: 0;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 6px;
+          transition: all 0.2s;
+        }
+
+        .close-button:hover {
+          background: #f3f4f6;
+          color: #1f2937;
+        }
+
+        .modal-body {
+          padding: 1.5rem;
+        }
+
+        .modal-description {
+          margin: 0 0 1.5rem 0;
+          color: #6b7280;
+          font-size: 0.9375rem;
+          line-height: 1.6;
+        }
+
+        .form-group {
+          margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+          display: block;
+          margin-bottom: 0.5rem;
+          color: #374151;
+          font-size: 0.875rem;
+          font-weight: 600;
+        }
+
+        .form-input,
+        .form-select {
+          width: 100%;
+          padding: 0.75rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          font-size: 0.9375rem;
+          color: #1f2937;
+          font-family: inherit;
+          transition: all 0.2s;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+          outline: none;
+          border-color: #0055f4;
+          box-shadow: 0 0 0 3px rgba(0, 85, 244, 0.1);
+        }
+
+        .modal-tip {
+          background: #fef3c7;
+          border-left: 4px solid #f59e0b;
+          padding: 1rem;
+          border-radius: 6px;
+          color: #92400e;
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+
+        .modal-footer {
+          padding: 1.5rem;
+          border-top: 1px solid #e5e7eb;
+          display: flex;
+          gap: 0.75rem;
+        }
+
+        .cancel-button,
+        .submit-button {
+          flex: 1;
+          padding: 0.875rem;
+          border-radius: 8px;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .cancel-button {
+          background: white;
+          border: 1px solid #d1d5db;
+          color: #374151;
+        }
+
+        .cancel-button:hover {
+          background: #f9fafb;
+        }
+
+        .submit-button {
+          background: linear-gradient(135deg, #0055f4, #0080ff);
+          border: none;
+          color: white;
+        }
+
+        .submit-button:hover:not(:disabled) {
+          background: linear-gradient(135deg, #0040c0, #0060dd);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 85, 244, 0.3);
+        }
+
+        .submit-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
       `}</style>
     </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { mockParts } from '../data/mockParts';
+import { useQuery } from '@tanstack/react-query';
+import type { Part } from '@shared/index';
 
 export default function PartDetail() {
   const { id } = useParams<{ id: string }>();
@@ -10,14 +11,62 @@ export default function PartDetail() {
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
 
-  // mockParts에서 부품 찾기
-  const part = mockParts.find(p => p.id === id);
+  // 백엔드 API에서 부품 데이터 가져오기
+  const { data: part, isLoading, error } = useQuery<Part>({
+    queryKey: ['part', id],
+    queryFn: async () => {
+      const response = await fetch(`/api/parts/${id}`);
+      if (!response.ok) {
+        throw new Error('부품을 찾을 수 없습니다');
+      }
+      return response.json();
+    },
+    enabled: !!id,
+  });
 
-  if (!part) {
+  // 로딩 상태
+  if (isLoading) {
+    return (
+      <div className="error-page">
+        <div className="loading-spinner"></div>
+        <p>부품 정보를 불러오는 중...</p>
+        <style>{`
+          .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #0055f4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          .error-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            gap: 1.5rem;
+            padding: 2rem;
+            background: #f9fafb;
+          }
+          .error-page p {
+            color: #6b7280;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // 에러 또는 부품 없음
+  if (error || !part) {
     return (
       <div className="error-page">
         <h2>부품을 찾을 수 없습니다</h2>
-        <p>요청하신 부품 정보가 존재하지 않습니다.</p>
+        <p>{error ? (error as Error).message : '요청하신 부품 정보가 존재하지 않습니다.'}</p>
         <button onClick={() => navigate('/buyer')}>부품 검색으로 돌아가기</button>
 
         <style>{`
@@ -64,13 +113,14 @@ export default function PartDetail() {
   // 이메일 템플릿 생성
   const generateEmailTemplate = () => {
     const subject = `[EECAR] ${part.name} 구매 문의`;
-    const body = `안녕하세요, ${part.seller.company}님
+    const body = `안녕하세요,
 
 EECAR를 통해 등록하신 '${part.name}'에 관심이 있어 연락드립니다.
 
 ▪️ 구매 희망 부품: ${part.name}
 ▪️ 제조사: ${part.manufacturer} / 모델: ${part.model}
 ▪️ 등록 가격: ${part.price.toLocaleString()}원
+▪️ 판매자 ID: ${part.sellerId}
 
 저희는 [사용 목적을 입력해주세요]을 위해 해당 부품이 필요합니다.
 
@@ -98,7 +148,8 @@ https://eecar.com`;
   };
 
   const handleContactClick = () => {
-    window.location.href = `mailto:${part.seller.contact}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    // 실제 판매자 이메일이 없으므로 일반 문의로 연결
+    window.location.href = `mailto:contact@eecar.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
     setShowContactModal(false);
   };
 
@@ -223,27 +274,17 @@ https://eecar.com`;
         )}
 
         {/* 판매자 정보 */}
-        {part.seller && (
-          <section className="seller-section">
-            <h3>판매자 정보</h3>
-            <div className="seller-card">
-              <div className="seller-info">
-                <div className="seller-name">{part.seller.company}</div>
-                <div className="seller-location">📍 {part.seller.location}</div>
-              </div>
-              <div className="seller-contact">
-                <div className="contact-item">
-                  <span className="label">이메일</span>
-                  <span className="value">{part.seller.contact}</span>
-                </div>
-                <div className="contact-item">
-                  <span className="label">전화</span>
-                  <span className="value">{part.seller.phone}</span>
-                </div>
+        <section className="seller-section">
+          <h3>판매자 정보</h3>
+          <div className="seller-card">
+            <div className="seller-info">
+              <div className="seller-name">판매자 ID: {part.sellerId}</div>
+              <div className="seller-note">
+                💡 판매자와 직접 연락하려면 아래 '구매 문의하기' 버튼을 클릭하세요.
               </div>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
       </main>
 
       {/* 하단 고정 버튼 */}
@@ -272,7 +313,7 @@ https://eecar.com`;
 
               <div className="email-preview">
                 <div className="preview-label">받는 사람</div>
-                <div className="preview-value">{part.seller.company} ({part.seller.contact})</div>
+                <div className="preview-value">EECAR 고객센터 (contact@eecar.com)</div>
 
                 <div className="preview-label">제목</div>
                 <input
@@ -619,6 +660,17 @@ https://eecar.com`;
         .seller-location {
           color: #6b7280;
           font-size: 0.875rem;
+        }
+
+        .seller-note {
+          margin-top: 0.75rem;
+          padding: 0.875rem;
+          background: #fef3c7;
+          border-left: 4px solid #f59e0b;
+          border-radius: 6px;
+          color: #92400e;
+          font-size: 0.875rem;
+          line-height: 1.5;
         }
 
         .seller-contact {
