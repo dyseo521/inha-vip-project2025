@@ -10,9 +10,9 @@ export default function Signup() {
     password: '',
     confirmPassword: '',
     name: '',
-    role: 'buyer' as 'buyer' | 'seller',
     companyName: '',
   });
+  const [isSeller, setIsSeller] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,11 +33,14 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
+      // 판매자 체크박스가 선택되면 seller, 아니면 buyer
+      const role = isSeller ? 'seller' : 'buyer';
+
       await signup(
         formData.email,
         formData.password,
         formData.name,
-        formData.role,
+        role,
         formData.companyName || undefined
       );
       navigate('/');
@@ -64,26 +67,6 @@ export default function Signup() {
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="role">계정 유형 *</label>
-              <div className="role-selector">
-                <button
-                  type="button"
-                  className={`role-button ${formData.role === 'buyer' ? 'active' : ''}`}
-                  onClick={() => setFormData({ ...formData, role: 'buyer' })}
-                >
-                  🛒 구매자
-                </button>
-                <button
-                  type="button"
-                  className={`role-button ${formData.role === 'seller' ? 'active' : ''}`}
-                  onClick={() => setFormData({ ...formData, role: 'seller' })}
-                >
-                  💼 판매자
-                </button>
-              </div>
-            </div>
-
-            <div className="form-group">
               <label htmlFor="name">이름 *</label>
               <input
                 id="name"
@@ -92,17 +75,6 @@ export default function Signup() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="홍길동"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="companyName">회사명 (선택사항)</label>
-              <input
-                id="companyName"
-                type="text"
-                value={formData.companyName}
-                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                placeholder="회사명을 입력하세요"
               />
             </div>
 
@@ -141,6 +113,35 @@ export default function Signup() {
                 placeholder="비밀번호를 다시 입력하세요"
               />
             </div>
+
+            <div className="form-group">
+              <div className="checkbox-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={isSeller}
+                    onChange={(e) => setIsSeller(e.target.checked)}
+                  />
+                  <span>💼 판매자로도 활동하기</span>
+                </label>
+                <p className="checkbox-hint">
+                  부품을 판매하려면 체크해주세요
+                </p>
+              </div>
+            </div>
+
+            {isSeller && (
+              <div className="form-group seller-info">
+                <label htmlFor="companyName">회사명</label>
+                <input
+                  id="companyName"
+                  type="text"
+                  value={formData.companyName}
+                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                  placeholder="회사명을 입력하세요 (선택사항)"
+                />
+              </div>
+            )}
 
             <button type="submit" className="submit-button" disabled={isLoading}>
               {isLoading ? '가입 중...' : '회원가입'}
@@ -243,32 +244,59 @@ export default function Signup() {
           box-shadow: 0 0 0 3px rgba(0, 85, 244, 0.1);
         }
 
-        .role-selector {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 0.75rem;
-        }
-
-        .role-button {
-          padding: 1rem;
-          background: white;
+        .checkbox-group {
+          background: rgba(0, 85, 244, 0.03);
           border: 2px solid #e5e7eb;
           border-radius: 10px;
-          font-size: 1rem;
-          font-weight: 600;
-          cursor: pointer;
+          padding: 1rem;
           transition: all 0.2s;
         }
 
-        .role-button:hover {
+        .checkbox-group:has(input:checked) {
           border-color: #0055f4;
-          background: rgba(0, 85, 244, 0.05);
+          background: rgba(0, 85, 244, 0.08);
         }
 
-        .role-button.active {
-          border-color: #0055f4;
-          background: linear-gradient(135deg, rgba(0, 85, 244, 0.1) 0%, rgba(0, 128, 255, 0.1) 100%);
-          color: #0055f4;
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          cursor: pointer;
+          margin: 0;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
+          accent-color: #0055f4;
+        }
+
+        .checkbox-label span {
+          font-size: 1rem;
+          font-weight: 600;
+          color: #1f2937;
+        }
+
+        .checkbox-hint {
+          margin: 0.5rem 0 0 2.25rem;
+          color: #6b7280;
+          font-size: 0.8125rem;
+        }
+
+        .seller-info {
+          animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .submit-button {

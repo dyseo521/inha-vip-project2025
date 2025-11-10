@@ -4,6 +4,29 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import type { Part } from '@shared/index';
 import { useAuth } from '../context/AuthContext';
 
+// 카테고리별 기본 이미지
+const categoryDefaultImages: Record<string, string> = {
+  'battery': '/image/batterypack_1.jpg',
+  'motor': '/image/motor1.jpg',
+  'inverter': '/image/inverter_1.png',
+  'body': '/image/car_body.jpg',
+  'charger': '/image/batterypack_1.jpg',
+  'electronics': '/image/inverter_1.png',
+  'interior': '/image/car_body.jpg',
+  'other': '/image/car_body.jpg',
+};
+
+// 이미지 URL 가져오기 헬퍼 함수
+const getPartImageUrl = (part: Part, index: number = 0): string => {
+  if (part.images && part.images.length > index && part.images[index]) {
+    return part.images[index];
+  }
+  if (part.image) {
+    return part.image;
+  }
+  return categoryDefaultImages[part.category] || '/image/car_body.jpg';
+};
+
 export default function PartDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -240,10 +263,13 @@ https://eecar.com`;
           <div className="image-gallery">
             <div className="main-image">
               <img
-                src={part.images?.[selectedImage] || part.image}
+                src={getPartImageUrl(part, selectedImage)}
                 alt={part.name}
                 onError={(e) => {
-                  e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="%23f3f4f6" width="400" height="300"/><text x="50%" y="50%" text-anchor="middle" fill="%239ca3af" font-size="16">이미지 없음</text></svg>';
+                  const defaultImg = categoryDefaultImages[part.category] || '/image/car_body.jpg';
+                  if (e.currentTarget.src !== window.location.origin + defaultImg) {
+                    e.currentTarget.src = defaultImg;
+                  }
                 }}
               />
               {part.quantity && (
@@ -259,7 +285,14 @@ https://eecar.com`;
                     className={`thumbnail ${selectedImage === idx ? 'active' : ''}`}
                     onClick={() => setSelectedImage(idx)}
                   >
-                    <img src={img} alt={`${part.name} ${idx + 1}`} />
+                    <img
+                      src={img}
+                      alt={`${part.name} ${idx + 1}`}
+                      onError={(e) => {
+                        const defaultImg = categoryDefaultImages[part.category] || '/image/car_body.jpg';
+                        e.currentTarget.src = defaultImg;
+                      }}
+                    />
                   </div>
                 ))}
               </div>

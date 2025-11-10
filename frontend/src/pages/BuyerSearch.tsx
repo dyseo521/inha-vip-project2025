@@ -11,6 +11,26 @@ const categoryMap: Record<string, string> = {
   '차체': 'body',
 };
 
+// 카테고리별 기본 이미지
+const categoryDefaultImages: Record<string, string> = {
+  'battery': '/image/batterypack_1.jpg',
+  'motor': '/image/motor1.jpg',
+  'inverter': '/image/inverter_1.png',
+  'body': '/image/car_body.jpg',
+  'charger': '/image/batterypack_1.jpg', // 충전기는 배터리 이미지 사용
+  'electronics': '/image/inverter_1.png', // 전장부품은 인버터 이미지 사용
+  'interior': '/image/car_body.jpg', // 내장재는 차체 이미지 사용
+  'other': '/image/car_body.jpg', // 기타는 차체 이미지 사용
+};
+
+// 이미지 URL 가져오기 헬퍼 함수
+const getPartImageUrl = (part: Part): string => {
+  if (part.images && part.images.length > 0 && part.images[0]) {
+    return part.images[0];
+  }
+  return categoryDefaultImages[part.category] || '/image/car_body.jpg';
+};
+
 export default function BuyerSearch() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -314,10 +334,14 @@ export default function BuyerSearch() {
                     >
                       <div className="part-image">
                         <img
-                          src={part.images?.[0] || '/image/placeholder.jpg'}
+                          src={getPartImageUrl(part)}
                           alt={part.name}
                           onError={(e) => {
-                            e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="280" height="200"><rect fill="%23f3f4f6" width="280" height="200"/><text x="50%" y="50%" text-anchor="middle" fill="%239ca3af" font-size="14">이미지 없음</text></svg>';
+                            // 카테고리별 기본 이미지로 재시도
+                            const defaultImg = categoryDefaultImages[part.category] || '/image/car_body.jpg';
+                            if (e.currentTarget.src !== window.location.origin + defaultImg) {
+                              e.currentTarget.src = defaultImg;
+                            }
                           }}
                         />
                         <div className="quantity-badge">{part.quantity}개 재고</div>
