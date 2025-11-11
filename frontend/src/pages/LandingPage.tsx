@@ -229,6 +229,18 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Story Teaser Section */}
+      <section className="story-teaser-section animate-on-scroll">
+        <div className="container">
+          <div className="story-teaser-content">
+            <h3 className="story-teaser-text">EECAR 스토리가 더 궁금하다면?</h3>
+            <button className="story-link-button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+              자세히 보기 →
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section - Toss Style */}
       <section className="cta-section animate-on-scroll">
         <div className="container">
@@ -990,11 +1002,12 @@ export default function LandingPage() {
         /* Mission Banner Section */
         .mission-banner {
           width: 100%;
-          height: 339px;
+          height: 400px;
           background-image: url('/image/background_consult.webp');
-          background-size: cover;
+          background-size: contain;
           background-position: center;
           background-repeat: no-repeat;
+          background-color: #f9fafb;
           position: relative;
           display: flex;
           align-items: center;
@@ -1025,9 +1038,49 @@ export default function LandingPage() {
           margin: 0;
         }
 
+        /* Story Teaser Section */
+        .story-teaser-section {
+          padding: 3.5rem 0;
+          background: white;
+        }
+
+        .story-teaser-content {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 2rem;
+          flex-wrap: wrap;
+        }
+
+        .story-teaser-text {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #191F28;
+          margin: 0;
+        }
+
+        .story-link-button {
+          padding: 0.875rem 2rem;
+          background: white;
+          border: 2px solid #0055f4;
+          color: #0055f4;
+          border-radius: 12px;
+          font-size: 1rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .story-link-button:hover {
+          background: #0055f4;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 85, 244, 0.3);
+        }
+
         /* CTA Section */
         .cta-section {
-          padding: 6rem 0;
+          padding: 4rem 0;
           background: linear-gradient(135deg, #0055f4 0%, #0055f4 50%, #0080ff 100%);
           position: relative;
           z-index: 5;
@@ -1392,12 +1445,26 @@ export default function LandingPage() {
           }
 
           .mission-banner {
-            height: 250px;
+            height: 280px;
           }
 
           .mission-text {
             font-size: 1.75rem;
             line-height: 1.4;
+          }
+
+          .story-teaser-section {
+            padding: 2.5rem 0;
+          }
+
+          .story-teaser-content {
+            flex-direction: column;
+            gap: 1.5rem;
+          }
+
+          .story-teaser-text {
+            font-size: 1.25rem;
+            text-align: center;
           }
 
           .cta-title-large {
