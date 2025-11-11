@@ -229,25 +229,21 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Story Teaser Section */}
-      <section className="story-teaser-section animate-on-scroll">
+      {/* Bridge Section */}
+      <section className="bridge-section animate-on-scroll">
         <div className="container">
-          <div className="story-teaser-content">
-            <h3 className="story-teaser-text">EECAR 스토리가 더 궁금하다면?</h3>
-            <button className="story-link-button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-              자세히 보기 →
-            </button>
+          <div className="bridge-content">
+            <h2 className="bridge-text">함께 만들어가는<br/>지속 가능한 미래</h2>
           </div>
         </div>
       </section>
 
-      {/* CTA Section - Toss Style */}
+      {/* CTA Section - Compact */}
       <section className="cta-section animate-on-scroll">
         <div className="container">
-          <div className="cta-content-large">
-            <h2 className="cta-title-large">지금 바로<br/>시작하세요</h2>
-            <p className="cta-subtitle">EV 부품 거래의 새로운 기준</p>
-            <div className="cta-buttons-large">
+          <div className="cta-content-compact">
+            <h2 className="cta-title-compact">지금 바로 시작하세요</h2>
+            <div className="cta-buttons-compact">
               <button className="cta-button-primary" onClick={() => navigate('/buyer')}>
                 부품 검색하기
               </button>
@@ -1004,10 +1000,9 @@ export default function LandingPage() {
           width: 100%;
           height: 400px;
           background-image: url('/image/background_consult.webp');
-          background-size: contain;
+          background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
-          background-color: #f9fafb;
           position: relative;
           display: flex;
           align-items: center;
@@ -1038,52 +1033,54 @@ export default function LandingPage() {
           margin: 0;
         }
 
-        /* Story Teaser Section */
-        .story-teaser-section {
-          padding: 3.5rem 0;
+        /* Bridge Section */
+        .bridge-section {
+          padding: 8rem 0;
           background: white;
         }
 
-        .story-teaser-content {
+        .bridge-content {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 2rem;
-          flex-wrap: wrap;
         }
 
-        .story-teaser-text {
-          font-size: 1.5rem;
-          font-weight: 700;
+        .bridge-text {
+          font-size: 3rem;
+          font-weight: 800;
           color: #191F28;
+          text-align: center;
+          line-height: 1.35;
+          letter-spacing: -0.02em;
           margin: 0;
-        }
-
-        .story-link-button {
-          padding: 0.875rem 2rem;
-          background: white;
-          border: 2px solid #0055f4;
-          color: #0055f4;
-          border-radius: 12px;
-          font-size: 1rem;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .story-link-button:hover {
-          background: #0055f4;
-          color: white;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 85, 244, 0.3);
         }
 
         /* CTA Section */
         .cta-section {
-          padding: 4rem 0;
+          padding: 2.5rem 0;
           background: linear-gradient(135deg, #0055f4 0%, #0055f4 50%, #0080ff 100%);
           position: relative;
           z-index: 5;
+        }
+
+        .cta-content-compact {
+          text-align: center;
+          color: white;
+        }
+
+        .cta-title-compact {
+          font-size: 2rem;
+          font-weight: 800;
+          margin: 0 0 1.5rem 0;
+          color: white;
+          letter-spacing: -0.01em;
+        }
+
+        .cta-buttons-compact {
+          display: flex;
+          gap: 1rem;
+          justify-content: center;
+          align-items: center;
         }
 
         .cta-content {
@@ -1453,18 +1450,22 @@ export default function LandingPage() {
             line-height: 1.4;
           }
 
-          .story-teaser-section {
-            padding: 2.5rem 0;
+          .bridge-section {
+            padding: 4rem 0;
           }
 
-          .story-teaser-content {
+          .bridge-text {
+            font-size: 2rem;
+            line-height: 1.4;
+          }
+
+          .cta-title-compact {
+            font-size: 1.75rem;
+          }
+
+          .cta-buttons-compact {
             flex-direction: column;
-            gap: 1.5rem;
-          }
-
-          .story-teaser-text {
-            font-size: 1.25rem;
-            text-align: center;
+            width: 100%;
           }
 
           .cta-title-large {
