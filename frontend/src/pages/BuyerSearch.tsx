@@ -14,13 +14,13 @@ const categoryMap: Record<string, string> = {
 // 카테고리별 기본 이미지
 const categoryDefaultImages: Record<string, string> = {
   'battery': '/image/batterypack_1.jpg',
-  'motor': '/image/motor1.jpg',
+  'motor': '/image/motor_1.jpg',
   'inverter': '/image/inverter_1.png',
-  'body': '/image/car_body.jpg',
+  'body': '/image/car_body_1.jpg',
   'charger': '/image/batterypack_1.jpg', // 충전기는 배터리 이미지 사용
   'electronics': '/image/inverter_1.png', // 전장부품은 인버터 이미지 사용
-  'interior': '/image/car_body.jpg', // 내장재는 차체 이미지 사용
-  'other': '/image/car_body.jpg', // 기타는 차체 이미지 사용
+  'interior': '/image/car_body_1.jpg', // 내장재는 차체 이미지 사용
+  'other': '/image/car_body_1.jpg', // 기타는 차체 이미지 사용
 };
 
 // 이미지 URL 가져오기 헬퍼 함수
@@ -28,7 +28,7 @@ const getPartImageUrl = (part: Part): string => {
   if (part.images && part.images.length > 0 && part.images[0]) {
     return part.images[0];
   }
-  return categoryDefaultImages[part.category] || '/image/car_body.jpg';
+  return categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
 };
 
 export default function BuyerSearch() {
@@ -344,7 +344,7 @@ export default function BuyerSearch() {
                           alt={part.name}
                           onError={(e) => {
                             // 카테고리별 기본 이미지로 재시도
-                            const defaultImg = categoryDefaultImages[part.category] || '/image/car_body.jpg';
+                            const defaultImg = categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
                             if (e.currentTarget.src !== window.location.origin + defaultImg) {
                               e.currentTarget.src = defaultImg;
                             }

@@ -328,23 +328,23 @@ app.post('/api/synthetic', async (req, res) => {
 const categoryImages = {
   battery: [
     '/image/batterypack_1.jpg',
-    '/image/batterypack_1.jpg',
-    '/image/batterypack_1.jpg'
+    '/image/batterypack_2.jpeg',
+    '/image/batterypack_3.jpg'
   ],
   motor: [
-    '/image/motor1.jpg',
-    '/image/motor2.jpg',
-    '/image/motor3.jpg'
+    '/image/motor_1.jpg',
+    '/image/motor_2.jpg',
+    '/image/motor_3.jpg'
   ],
   inverter: [
     '/image/inverter_1.png',
-    '/image/inverter_1.png',
-    '/image/inverter_1.png'
+    '/image/inverter_2.jpg',
+    '/image/inverter_3.png'
   ],
   body: [
-    '/image/car_body.jpg',
-    '/image/car_body.jpg',
-    '/image/car_body.jpg'
+    '/image/car_body_1.jpg',
+    '/image/car_body_2.jpg',
+    '/image/car_body_3.png'
   ]
 };
 

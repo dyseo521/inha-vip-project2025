@@ -46,8 +46,8 @@ export const mockParts = [
   {
     id: '2',
     name: 'Nissan Leaf 구동 모터',
-    image: '/image/motor1.jpg',
-    images: ['/image/motor1.jpg'],
+    image: '/image/motor_1.jpg',
+    images: ['/image/motor_1.jpg'],
     manufacturer: 'Nissan',
     model: 'Leaf',
     price: 3500000,
@@ -127,8 +127,8 @@ export const mockParts = [
   {
     id: '4',
     name: 'Chevrolet Bolt 구동 모터',
-    image: '/image/motor2.jpg',
-    images: ['/image/motor2.jpg'],
+    image: '/image/motor_2.jpg',
+    images: ['/image/motor_2.jpg'],
     manufacturer: 'Chevrolet',
     model: 'Bolt',
     price: 4200000,
@@ -170,8 +170,8 @@ export const mockParts = [
   {
     id: '5',
     name: 'Hyundai Kona 차체 부품',
-    image: '/image/car_body.jpg',
-    images: ['/image/car_body.jpg'],
+    image: '/image/car_body_1.jpg',
+    images: ['/image/car_body_1.jpg'],
     manufacturer: 'Hyundai',
     model: 'Kona Electric',
     price: 5500000,
@@ -203,8 +203,8 @@ export const mockParts = [
   {
     id: '6',
     name: 'Renault Zoe 고성능 모터',
-    image: '/image/motor3.jpg',
-    images: ['/image/motor3.jpg'],
+    image: '/image/motor_3.jpg',
+    images: ['/image/motor_3.jpg'],
     manufacturer: 'Renault',
     model: 'Zoe',
     price: 3200000,

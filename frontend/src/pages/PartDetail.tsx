@@ -7,13 +7,13 @@ import { useAuth } from '../context/AuthContext';
 // 카테고리별 기본 이미지
 const categoryDefaultImages: Record<string, string> = {
   'battery': '/image/batterypack_1.jpg',
-  'motor': '/image/motor1.jpg',
+  'motor': '/image/motor_1.jpg',
   'inverter': '/image/inverter_1.png',
-  'body': '/image/car_body.jpg',
+  'body': '/image/car_body_1.jpg',
   'charger': '/image/batterypack_1.jpg',
   'electronics': '/image/inverter_1.png',
-  'interior': '/image/car_body.jpg',
-  'other': '/image/car_body.jpg',
+  'interior': '/image/car_body_1.jpg',
+  'other': '/image/car_body_1.jpg',
 };
 
 // 이미지 URL 가져오기 헬퍼 함수
@@ -24,7 +24,7 @@ const getPartImageUrl = (part: Part, index: number = 0): string => {
   if (part.image) {
     return part.image;
   }
-  return categoryDefaultImages[part.category] || '/image/car_body.jpg';
+  return categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
 };
 
 export default function PartDetail() {
@@ -273,7 +273,7 @@ https://eecar.com`;
                 src={getPartImageUrl(part, selectedImage)}
                 alt={part.name}
                 onError={(e) => {
-                  const defaultImg = categoryDefaultImages[part.category] || '/image/car_body.jpg';
+                  const defaultImg = categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
                   if (e.currentTarget.src !== window.location.origin + defaultImg) {
                     e.currentTarget.src = defaultImg;
                   }
@@ -296,7 +296,7 @@ https://eecar.com`;
                       src={img}
                       alt={`${part.name} ${idx + 1}`}
                       onError={(e) => {
-                        const defaultImg = categoryDefaultImages[part.category] || '/image/car_body.jpg';
+                        const defaultImg = categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
                         e.currentTarget.src = defaultImg;
                       }}
                     />
