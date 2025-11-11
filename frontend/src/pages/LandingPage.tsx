@@ -1035,7 +1035,7 @@ export default function LandingPage() {
 
         /* Bridge Section */
         .bridge-section {
-          padding: 8rem 0;
+          padding: 8rem 0 4rem 0;
           background: white;
         }
 
@@ -1057,28 +1057,27 @@ export default function LandingPage() {
 
         /* CTA Section */
         .cta-section {
-          padding: 2.5rem 0;
-          background: linear-gradient(135deg, #0055f4 0%, #0055f4 50%, #0080ff 100%);
+          padding: 5rem 0 8rem 0;
+          background: white;
           position: relative;
           z-index: 5;
         }
 
         .cta-content-compact {
           text-align: center;
-          color: white;
         }
 
         .cta-title-compact {
-          font-size: 2rem;
+          font-size: 2.25rem;
           font-weight: 800;
-          margin: 0 0 1.5rem 0;
-          color: white;
-          letter-spacing: -0.01em;
+          margin: 0 0 2.5rem 0;
+          color: #191F28;
+          letter-spacing: -0.02em;
         }
 
         .cta-buttons-compact {
           display: flex;
-          gap: 1rem;
+          gap: 1.5rem;
           justify-content: center;
           align-items: center;
         }
@@ -1206,35 +1205,37 @@ export default function LandingPage() {
 
         .cta-button-primary,
         .cta-button-secondary {
-          padding: 1.25rem 2.5rem;
-          border: none;
-          border-radius: 12px;
-          font-size: 1.125rem;
+          padding: 1.5rem 3.5rem;
+          border-radius: 14px;
+          font-size: 1.25rem;
           font-weight: 700;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.3s ease;
+          border: none;
+          min-width: 200px;
         }
 
         .cta-button-primary {
-          background: white;
-          color: #0055f4;
+          background: linear-gradient(135deg, #0055f4 0%, #0080ff 100%);
+          color: white;
+          box-shadow: 0 4px 20px rgba(0, 85, 244, 0.25);
         }
 
         .cta-button-secondary {
-          background: rgba(255, 255, 255, 0.15);
-          color: white;
-          border: 2px solid rgba(255, 255, 255, 0.5);
+          background: white;
+          color: #0055f4;
+          border: 2px solid #0055f4;
         }
 
-        .cta-button-primary:hover,
-        .cta-button-secondary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        .cta-button-primary:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 30px rgba(0, 85, 244, 0.4);
         }
 
         .cta-button-secondary:hover {
-          background: rgba(255, 255, 255, 0.25);
-          border-color: white;
+          background: #f0f7ff;
+          transform: translateY(-3px);
+          box-shadow: 0 8px 30px rgba(0, 85, 244, 0.2);
         }
 
         /* Scroll Indicator */
@@ -1459,13 +1460,26 @@ export default function LandingPage() {
             line-height: 1.4;
           }
 
+          .cta-section {
+            padding: 3rem 0 5rem 0;
+          }
+
           .cta-title-compact {
             font-size: 1.75rem;
+            margin-bottom: 2rem;
           }
 
           .cta-buttons-compact {
             flex-direction: column;
             width: 100%;
+            gap: 1rem;
+          }
+
+          .cta-button-primary,
+          .cta-button-secondary {
+            width: 100%;
+            padding: 1.25rem 2rem;
+            font-size: 1.125rem;
           }
 
           .cta-title-large {
