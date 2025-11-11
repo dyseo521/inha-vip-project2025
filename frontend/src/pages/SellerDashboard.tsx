@@ -771,17 +771,16 @@ export default function SellerDashboard() {
         }
 
         .radio-option {
-          display: flex;
+          display: inline-flex;
           align-items: center;
-          justify-content: center;
-          gap: 0.75rem;
-          padding: 0.875rem 1.5rem;
+          gap: 0.625rem;
+          padding: 0.75rem 1.25rem;
           border: 2px solid #e5e7eb;
           border-radius: 8px;
           cursor: pointer;
           transition: all 0.2s;
           background: white;
-          min-width: 110px;
+          min-width: 105px;
         }
 
         .radio-option:hover {
@@ -796,7 +795,6 @@ export default function SellerDashboard() {
           accent-color: #0055f4;
           margin: 0;
           flex-shrink: 0;
-          vertical-align: middle;
         }
 
         .radio-option input[type="radio"]:checked + span {
@@ -814,9 +812,7 @@ export default function SellerDashboard() {
           color: #374151;
           transition: all 0.2s;
           white-space: nowrap;
-          line-height: 1;
-          display: flex;
-          align-items: center;
+          line-height: 1.2;
         }
 
         .category-scroll-container {
