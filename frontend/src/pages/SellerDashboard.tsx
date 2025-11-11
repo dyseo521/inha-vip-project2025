@@ -87,6 +87,7 @@ export default function SellerDashboard() {
 
   // 이미지 URL들 (나중에 S3 업로드로 변경)
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   // 카테고리 변경 시 specifications 초기화
   useEffect(() => {
@@ -204,6 +205,16 @@ export default function SellerDashboard() {
     setImageUrls(updated);
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setUploadedFiles([...uploadedFiles, ...files]);
+      // 임시로 로컬 URL 생성 (실제로는 S3 업로드 후 URL 받아야 함)
+      const urls = files.map(file => URL.createObjectURL(file));
+      setImageUrls([...imageUrls.filter(url => url !== ''), ...urls]);
+    }
+  };
+
   return (
     <div className="seller-dashboard">
       <header className="page-header">
@@ -217,6 +228,49 @@ export default function SellerDashboard() {
         <section className="registration-form">
           <h2>부품 등록</h2>
           <form onSubmit={handleSubmit}>
+            {/* 이미지 업로드 - 맨 위로 이동 */}
+            <div className="form-section image-upload-section">
+              <h3>이미지 업로드</h3>
+              <p className="section-hint">부품 이미지를 업로드하세요</p>
+              <div className="image-upload-container">
+                <input
+                  type="file"
+                  id="image-file-input"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="image-file-input" className="upload-box">
+                  <div className="camera-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                      <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                  </div>
+                  <span>클릭하여 이미지 업로드</span>
+                </label>
+                {imageUrls.filter(url => url !== '').length > 0 && (
+                  <div className="uploaded-images">
+                    {imageUrls.filter(url => url !== '').map((url, index) => (
+                      <div key={index} className="image-preview">
+                        <img src={url} alt={`preview-${index}`} />
+                        <button
+                          type="button"
+                          onClick={() => removeImageUrl(index)}
+                          className="remove-image-btn"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="section-divider"></div>
+
             <div className="form-group">
               <label htmlFor="name">부품명 *</label>
               <input
@@ -288,22 +342,56 @@ export default function SellerDashboard() {
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="condition">상태 *</label>
-                <select
-                  id="condition"
-                  required
-                  value={formData.condition}
-                  onChange={(e) => setFormData({ ...formData, condition: e.target.value as any })}
-                >
-                  <option value="new">신품</option>
-                  <option value="used">중고</option>
-                  <option value="refurbished">리퍼</option>
-                  <option value="for-parts">부품용</option>
-                </select>
-              </div>
+            <div className="section-divider"></div>
 
+            <div className="form-group">
+              <label>상태 *</label>
+              <div className="radio-group">
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="condition"
+                    value="new"
+                    checked={formData.condition === 'new'}
+                    onChange={(e) => setFormData({ ...formData, condition: e.target.value as any })}
+                    required
+                  />
+                  <span>신품</span>
+                </label>
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="condition"
+                    value="used"
+                    checked={formData.condition === 'used'}
+                    onChange={(e) => setFormData({ ...formData, condition: e.target.value as any })}
+                  />
+                  <span>중고</span>
+                </label>
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="condition"
+                    value="refurbished"
+                    checked={formData.condition === 'refurbished'}
+                    onChange={(e) => setFormData({ ...formData, condition: e.target.value as any })}
+                  />
+                  <span>리퍼</span>
+                </label>
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="condition"
+                    value="for-parts"
+                    checked={formData.condition === 'for-parts'}
+                    onChange={(e) => setFormData({ ...formData, condition: e.target.value as any })}
+                  />
+                  <span>부품용</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="form-row">
               <div className="form-group">
                 <label htmlFor="quantity">수량 *</label>
                 <input
@@ -315,19 +403,21 @@ export default function SellerDashboard() {
                   onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                 />
               </div>
+
+              <div className="form-group">
+                <label htmlFor="price">가격 (원) *</label>
+                <input
+                  id="price"
+                  type="number"
+                  required
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  placeholder="1000000"
+                />
+              </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="price">가격 (원) *</label>
-              <input
-                id="price"
-                type="number"
-                required
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                placeholder="1000000"
-              />
-            </div>
+            <div className="section-divider"></div>
 
             <div className="form-group">
               <label htmlFor="description">설명</label>
@@ -340,33 +430,7 @@ export default function SellerDashboard() {
               />
             </div>
 
-            {/* 이미지 URL */}
-            <div className="form-section">
-              <h3>이미지</h3>
-              <p className="section-hint">이미지 URL을 입력하세요 (나중에 파일 업로드 기능 추가 예정)</p>
-              {imageUrls.map((url, index) => (
-                <div key={index} className="dynamic-field">
-                  <input
-                    type="url"
-                    value={url}
-                    onChange={(e) => updateImageUrl(index, e.target.value)}
-                    placeholder="https://example.com/image.jpg"
-                  />
-                  {imageUrls.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeImageUrl(index)}
-                      className="remove-button"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button type="button" onClick={addImageUrl} className="add-button">
-                + 이미지 추가
-              </button>
-            </div>
+            <div className="section-divider"></div>
 
             {/* 상세 사양 - 카테고리별 동적 필드 */}
             <div className="form-section">
@@ -412,6 +476,8 @@ export default function SellerDashboard() {
                 return null;
               })}
             </div>
+
+            <div className="section-divider"></div>
 
             {/* 활용 사례 */}
             <div className="form-section">
@@ -594,12 +660,157 @@ export default function SellerDashboard() {
           gap: 1.5rem;
         }
 
+        .section-divider {
+          height: 1px;
+          background: #e5e7eb;
+          margin: 2rem 0;
+        }
+
         .form-section {
           margin-top: 2.5rem;
           padding: 1.5rem;
           background: rgba(0, 162, 255, 0.03);
           border-radius: 12px;
           border: 1px dashed rgba(0, 162, 255, 0.3);
+        }
+
+        .image-upload-section {
+          margin-top: 0;
+          margin-bottom: 1rem;
+        }
+
+        .image-upload-container {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .upload-box {
+          width: 180px;
+          height: 180px;
+          border: 2px dashed #00a2ff;
+          border-radius: 12px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          background: white;
+          transition: all 0.3s ease;
+          gap: 0.75rem;
+        }
+
+        .upload-box:hover {
+          border-color: #0055f4;
+          background: rgba(0, 85, 244, 0.05);
+          transform: scale(1.02);
+        }
+
+        .camera-icon {
+          width: 48px;
+          height: 48px;
+          color: #00a2ff;
+        }
+
+        .camera-icon svg {
+          width: 100%;
+          height: 100%;
+        }
+
+        .upload-box span {
+          font-size: 0.875rem;
+          color: #0055f4;
+          font-weight: 600;
+        }
+
+        .uploaded-images {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .image-preview {
+          position: relative;
+          width: 120px;
+          height: 120px;
+          border-radius: 8px;
+          overflow: hidden;
+          border: 2px solid #e5e7eb;
+        }
+
+        .image-preview img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .remove-image-btn {
+          position: absolute;
+          top: 0.25rem;
+          right: 0.25rem;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #ef4444;
+          color: white;
+          border: none;
+          font-size: 0.875rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+
+        .remove-image-btn:hover {
+          background: #dc2626;
+          transform: scale(1.1);
+        }
+
+        .radio-group {
+          display: flex;
+          gap: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .radio-option {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.25rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+          background: white;
+        }
+
+        .radio-option:hover {
+          border-color: #00a2ff;
+          background: rgba(0, 162, 255, 0.05);
+        }
+
+        .radio-option input[type="radio"] {
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
+          accent-color: #0055f4;
+        }
+
+        .radio-option input[type="radio"]:checked + span {
+          color: #0055f4;
+          font-weight: 700;
+        }
+
+        .radio-option:has(input[type="radio"]:checked) {
+          border-color: #0055f4;
+          background: rgba(0, 85, 244, 0.08);
+        }
+
+        .radio-option span {
+          font-size: 1rem;
+          color: #374151;
+          transition: all 0.2s;
         }
 
         .form-section h3 {

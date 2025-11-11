@@ -201,19 +201,19 @@ export default function LandingPage() {
 
             <div className="workflow-steps-wrapper">
               <div className="workflow-step animate-on-scroll">
-                <div className="step-number">①</div>
+                <div className="step-keyword">AI 검색</div>
                 <h3>AI가 부품을 찾아드립니다</h3>
                 <p>자연어로 물어보면 최적의 부품을 추천받습니다</p>
               </div>
 
               <div className="workflow-step animate-on-scroll">
-                <div className="step-number">②</div>
+                <div className="step-keyword">데이터 확인</div>
                 <h3>물성 데이터를 확인하세요</h3>
                 <p>검증된 데이터로 안전하게 비교하고 선택합니다</p>
               </div>
 
               <div className="workflow-step animate-on-scroll">
-                <div className="step-number">③</div>
+                <div className="step-keyword">거래 완료</div>
                 <h3>계약하고 거래 완료</h3>
                 <p>안전한 B2B 프로세스로 거래를 진행합니다</p>
               </div>
@@ -1056,23 +1056,27 @@ export default function LandingPage() {
           text-align: left;
         }
 
-        .step-number {
-          font-size: 3rem;
-          font-weight: 800;
-          color: #0055f4;
-          margin-bottom: 1rem;
-          line-height: 1;
+        .step-keyword {
+          display: inline-block;
+          padding: 0.625rem 1.5rem;
+          font-size: 1.125rem;
+          font-weight: 700;
+          color: white;
+          background: linear-gradient(135deg, #0055f4, #0080ff);
+          border-radius: 24px;
+          margin-bottom: 1.5rem;
+          box-shadow: 0 4px 12px rgba(0, 85, 244, 0.25);
         }
 
         .workflow-step h3 {
-          font-size: 1.375rem;
+          font-size: 1.625rem;
           font-weight: 700;
           color: #191F28;
-          margin-bottom: 0.75rem;
+          margin-bottom: 0.875rem;
         }
 
         .workflow-step p {
-          font-size: 1rem;
+          font-size: 1.125rem;
           color: #4E5968;
           line-height: 1.6;
         }
@@ -1337,8 +1341,9 @@ export default function LandingPage() {
             gap: 3rem;
           }
 
-          .step-number {
-            font-size: 2.5rem;
+          .step-keyword {
+            font-size: 1rem;
+            padding: 0.5rem 1.25rem;
           }
 
           .cta-title-large {
