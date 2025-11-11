@@ -201,10 +201,12 @@ export default function BuyerSearch() {
   return (
     <div className="buyer-search">
       <header className="page-header">
-        <button onClick={() => navigate('/')} className="back-button">
-          ← 홈으로
-        </button>
-        <h1>부품 검색</h1>
+        <div className="header-left">
+          <button onClick={() => navigate('/')} className="back-button">
+            ← 홈으로
+          </button>
+          <h1>부품 검색</h1>
+        </div>
 
         {/* AI 검색창 - 헤더 안 */}
         <div className="header-search">
@@ -222,7 +224,7 @@ export default function BuyerSearch() {
         </div>
 
         <button onClick={() => setShowWatchModal(true)} className="watch-button">
-          관심 부품 알림 설정
+          🔔 관심 부품 알림 설정
         </button>
       </header>
 
@@ -496,14 +498,26 @@ export default function BuyerSearch() {
           position: sticky;
           top: 0;
           z-index: 100;
-          display: flex;
+          display: grid;
+          grid-template-columns: auto 1fr auto;
           align-items: center;
           gap: 1.5rem;
         }
 
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
         .header-search {
-          flex: 1;
           max-width: 800px;
+          justify-self: center;
+          width: 100%;
+        }
+
+        .watch-button {
+          justify-self: end;
         }
 
         .search-form {
@@ -1044,27 +1058,28 @@ export default function BuyerSearch() {
           .page-header {
             padding: 1rem;
             gap: 0.75rem;
-            flex-wrap: wrap;
+            grid-template-columns: 1fr auto;
+            grid-template-rows: auto auto;
+          }
+
+          .header-left {
+            grid-column: 1;
+            grid-row: 1;
           }
 
           .page-header h1 {
             font-size: 1.4rem;
-            order: 1;
-          }
-
-          .back-button {
-            order: 0;
-          }
-
-          .header-search {
-            order: 3;
-            width: 100%;
-            max-width: 100%;
           }
 
           .watch-button {
-            order: 2;
-            margin-left: auto;
+            grid-column: 2;
+            grid-row: 1;
+          }
+
+          .header-search {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            max-width: 100%;
           }
 
           .search-form input[type="text"] {

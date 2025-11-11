@@ -21,9 +21,6 @@ const getPartImageUrl = (part: Part, index: number = 0): string => {
   if (part.images && part.images.length > index && part.images[index]) {
     return part.images[index];
   }
-  if (part.image) {
-    return part.image;
-  }
   return categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
 };
 
@@ -316,22 +313,22 @@ https://eecar.com`;
 
             {/* 주요 스펙 */}
             <div className="key-specs">
-              {part.capacity && (
+              {part.specifications?.electricalProps?.capacity && (
                 <div className="spec-item">
                   <span className="spec-label">용량</span>
-                  <span className="spec-value">{part.capacity}</span>
+                  <span className="spec-value">{part.specifications.electricalProps.capacity}Ah</span>
                 </div>
               )}
-              {part.power && (
+              {part.specifications?.electricalProps?.power && (
                 <div className="spec-item">
                   <span className="spec-label">출력</span>
-                  <span className="spec-value">{part.power}</span>
+                  <span className="spec-value">{part.specifications.electricalProps.power}W</span>
                 </div>
               )}
-              {part.type && (
+              {part.specifications?.electricalProps?.voltage && (
                 <div className="spec-item">
-                  <span className="spec-label">타입</span>
-                  <span className="spec-value">{part.type}</span>
+                  <span className="spec-label">전압</span>
+                  <span className="spec-value">{part.specifications.electricalProps.voltage}V</span>
                 </div>
               )}
               <div className="spec-item">
