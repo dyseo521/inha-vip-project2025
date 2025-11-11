@@ -233,7 +233,7 @@ export default function LandingPage() {
       <section className="bridge-section animate-on-scroll">
         <div className="container">
           <div className="bridge-content">
-            <h2 className="bridge-text">함께 만들어가는<br/>지속 가능한 미래</h2>
+            <h2 className="bridge-text">함께 만들어가는 지속 가능한 미래</h2>
           </div>
         </div>
       </section>
@@ -1035,7 +1035,7 @@ export default function LandingPage() {
 
         /* Bridge Section */
         .bridge-section {
-          padding: 8rem 0 4rem 0;
+          padding: 10rem 0 8rem 0;
           background: white;
         }
 
@@ -1068,7 +1068,7 @@ export default function LandingPage() {
         }
 
         .cta-title-compact {
-          font-size: 2.25rem;
+          font-size: 5rem;
           font-weight: 800;
           margin: 0 0 2.5rem 0;
           color: #191F28;
