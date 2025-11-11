@@ -210,15 +210,15 @@ export default function BuyerSearch() {
         </button>
       </header>
 
-      {/* AI 검색창 - 상단 */}
+      {/* AI 검색창 - 헤더 바로 아래 */}
       <section className="search-section-top">
         <div className="search-container">
           <form onSubmit={handleSearch} className="search-form">
-            <textarea
+            <input
+              type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="예: ESS 구축용 안전한 배터리를 찾습니다. 5년 이상 사용 가능하고 60kWh 이상이면 좋겠어요."
-              rows={3}
             />
             <button type="submit" disabled={!query.trim() || isLoading} className="search-arrow-btn">
               →
@@ -504,8 +504,9 @@ export default function BuyerSearch() {
 
         /* 상단 AI 검색 섹션 */
         .search-section-top {
-          padding: 2rem 2rem;
-          background: transparent;
+          padding: 1rem 2rem;
+          background: white;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .search-container {
@@ -519,45 +520,44 @@ export default function BuyerSearch() {
           align-items: center;
         }
 
-        .search-form textarea {
+        .search-form input[type="text"] {
           width: 100%;
-          padding: 0.5rem 4rem 0.5rem 1.5rem;
+          padding: 0.875rem 4rem 0.875rem 1.5rem;
           border: 2px solid #d1d5db;
           border-radius: 50px;
-          font-size: 0.9375rem;
+          font-size: 1rem;
           font-family: inherit;
-          resize: none;
           background: white;
           color: #1f2937;
           transition: all 0.2s ease;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
           line-height: 1.5;
+          height: 3.25rem;
         }
 
-        .search-form textarea:focus {
+        .search-form input[type="text"]:focus {
           outline: none;
           border-color: #0055f4;
           box-shadow: 0 4px 16px rgba(0, 85, 244, 0.15);
         }
 
-        .search-form textarea::placeholder {
+        .search-form input[type="text"]::placeholder {
           color: #9ca3af;
-          font-size: 0.875rem;
-          line-height: 1.5;
+          font-size: 0.9375rem;
         }
 
         .search-arrow-btn {
           position: absolute;
-          right: 0.625rem;
+          right: 0.5rem;
           top: 50%;
           transform: translateY(-50%);
-          width: 2.5rem;
-          height: 2.5rem;
+          width: 2.25rem;
+          height: 2.25rem;
           background: #0055f4;
           color: white;
           border: none;
           border-radius: 50%;
-          font-size: 1.125rem;
+          font-size: 1rem;
           font-weight: 300;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -1017,7 +1017,16 @@ export default function BuyerSearch() {
 
         @media (max-width: 1024px) {
           .search-section-top {
-            padding: 1.5rem;
+            padding: 0.75rem 1.5rem;
+          }
+
+          .search-form input[type="text"] {
+            font-size: 0.9375rem;
+            height: 3rem;
+          }
+
+          .search-form input[type="text"]::placeholder {
+            font-size: 0.875rem;
           }
 
           .search-layout {
@@ -1044,22 +1053,23 @@ export default function BuyerSearch() {
           }
 
           .search-section-top {
-            padding: 1rem;
+            padding: 0.75rem 1rem;
           }
 
-          .search-form textarea {
+          .search-form input[type="text"] {
+            font-size: 0.9375rem;
+            padding: 0.75rem 3.5rem 0.75rem 1.25rem;
+            height: 2.75rem;
+          }
+
+          .search-form input[type="text"]::placeholder {
             font-size: 0.875rem;
-            padding: 0.5rem 3.5rem 0.5rem 1.25rem;
-          }
-
-          .search-form textarea::placeholder {
-            font-size: 0.8125rem;
           }
 
           .search-arrow-btn {
-            width: 2.25rem;
-            height: 2.25rem;
-            font-size: 1rem;
+            width: 2rem;
+            height: 2rem;
+            font-size: 0.9375rem;
             right: 0.5rem;
           }
 
@@ -1102,22 +1112,23 @@ export default function BuyerSearch() {
 
         @media (max-width: 480px) {
           .search-section-top {
-            padding: 0.75rem;
+            padding: 0.625rem 0.75rem;
           }
 
-          .search-form textarea {
-            padding: 0.375rem 3rem 0.375rem 1rem;
-            font-size: 0.8125rem;
+          .search-form input[type="text"] {
+            padding: 0.625rem 3rem 0.625rem 1rem;
+            font-size: 0.875rem;
             border-radius: 40px;
+            height: 2.5rem;
           }
 
-          .search-form textarea::placeholder {
-            font-size: 0.75rem;
+          .search-form input[type="text"]::placeholder {
+            font-size: 0.8125rem;
           }
 
           .search-arrow-btn {
-            width: 2rem;
-            height: 2rem;
+            width: 1.75rem;
+            height: 1.75rem;
             font-size: 0.875rem;
             right: 0.5rem;
           }
