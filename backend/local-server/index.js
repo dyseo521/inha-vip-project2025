@@ -324,6 +324,30 @@ app.post('/api/synthetic', async (req, res) => {
 });
 
 // ==================== HELPER FUNCTIONS ====================
+// Category-specific images
+const categoryImages = {
+  battery: [
+    '/image/batterypack_1.jpg',
+    '/image/batterypack_1.jpg',
+    '/image/batterypack_1.jpg'
+  ],
+  motor: [
+    '/image/motor1.jpg',
+    '/image/motor2.jpg',
+    '/image/motor3.jpg'
+  ],
+  inverter: [
+    '/image/inverter_1.png',
+    '/image/inverter_1.png',
+    '/image/inverter_1.png'
+  ],
+  body: [
+    '/image/car_body.jpg',
+    '/image/car_body.jpg',
+    '/image/car_body.jpg'
+  ]
+};
+
 function generateMockPart(category, partId) {
   const manufacturers = ['Tesla', 'Hyundai', 'Kia', 'Nissan', 'BMW', 'Chevrolet'];
   const models = ['Model S', 'Model 3', 'Ioniq 5', 'EV6', 'Leaf', 'i3', 'Bolt'];
@@ -331,6 +355,21 @@ function generateMockPart(category, partId) {
 
   const manufacturer = manufacturers[Math.floor(Math.random() * manufacturers.length)];
   const model = models[Math.floor(Math.random() * models.length)];
+
+  // Get category-specific images
+  const images = categoryImages[category] || [];
+
+  // Randomly select 1-3 images from the category
+  const numImages = Math.floor(Math.random() * 3) + 1; // 1-3 images
+  const selectedImages = [];
+  const availableIndices = [0, 1, 2];
+
+  for (let i = 0; i < numImages; i++) {
+    const randomIndex = Math.floor(Math.random() * availableIndices.length);
+    const imageIndex = availableIndices[randomIndex];
+    selectedImages.push(images[imageIndex]);
+    availableIndices.splice(randomIndex, 1);
+  }
 
   return {
     partId,
@@ -344,7 +383,7 @@ function generateMockPart(category, partId) {
     quantity: Math.floor(Math.random() * 10) + 1,
     sellerId: 'local-seller',
     description: `${category} 부품 - 로컬 테스트용 샘플 데이터`,
-    images: [],
+    images: selectedImages,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
