@@ -358,7 +358,7 @@ export default function SellerDashboard() {
                     onChange={(e) => setFormData({ ...formData, condition: e.target.value as any })}
                     required
                   />
-                  <span>신품</span>
+                  <span>  신품</span>
                 </label>
                 <label className="radio-option">
                   <input
@@ -368,7 +368,7 @@ export default function SellerDashboard() {
                     checked={formData.condition === 'used'}
                     onChange={(e) => setFormData({ ...formData, condition: e.target.value as any })}
                   />
-                  <span>중고</span>
+                  <span>  중고</span>
                 </label>
                 <label className="radio-option">
                   <input
@@ -378,7 +378,7 @@ export default function SellerDashboard() {
                     checked={formData.condition === 'refurbished'}
                     onChange={(e) => setFormData({ ...formData, condition: e.target.value as any })}
                   />
-                  <span>리퍼</span>
+                  <span>  리퍼</span>
                 </label>
                 <label className="radio-option">
                   <input
@@ -388,7 +388,7 @@ export default function SellerDashboard() {
                     checked={formData.condition === 'for-parts'}
                     onChange={(e) => setFormData({ ...formData, condition: e.target.value as any })}
                   />
-                  <span>부품용</span>
+                  <span>  부품용</span>
                 </label>
               </div>
             </div>
