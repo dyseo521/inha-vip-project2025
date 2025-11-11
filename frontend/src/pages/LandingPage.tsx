@@ -81,14 +81,15 @@ export default function LandingPage() {
           <p className="hero-subtitle">
             AI 기반 RAG 검색으로 최적의 EV 부품을 찾아보세요
           </p>
-          <div className="hero-cta-buttons">
-            <button className="hero-button-primary" onClick={() => navigate('/buyer')}>
-              부품 검색하기
-            </button>
-            <button className="hero-button-secondary" onClick={() => navigate('/seller')}>
-              부품 등록하기
-            </button>
-          </div>
+          <button
+            className="hero-explore-button"
+            onClick={() => {
+              const entrySection = document.querySelector('.entry-section');
+              entrySection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+          >
+            자세히 보기
+          </button>
         </div>
 
         {/* Scroll Indicator */}
@@ -520,26 +521,9 @@ export default function LandingPage() {
           text-align: center;
           position: relative;
           z-index: 10;
-          padding: 4rem 3rem;
-          border-radius: 32px;
-          background: rgba(255, 255, 255, 0.75);
-          backdrop-filter: blur(10px) saturate(150%);
-          -webkit-backdrop-filter: blur(10px) saturate(150%);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          box-shadow:
-            0 8px 32px 0 rgba(0, 85, 244, 0.1),
-            0 2px 8px 0 rgba(0, 0, 0, 0.03),
-            inset 0 1px 1px 0 rgba(255, 255, 255, 0.5);
+          padding: 2rem;
           max-width: 900px;
-          margin: 0 2rem;
-          transition: all 0.3s ease;
-        }
-
-        .hero-content:hover {
-          transform: translateY(-5px);
-          box-shadow:
-            0 12px 40px 0 rgba(0, 85, 244, 0.15),
-            0 4px 12px 0 rgba(0, 0, 0, 0.05);
+          margin: 0 auto;
         }
 
         .logo {
@@ -554,64 +538,43 @@ export default function LandingPage() {
         }
 
         .hero-title {
-          font-size: 2.5rem;
-          color: #1e293b;
-          margin-bottom: 1.25rem;
+          font-size: 2.75rem;
+          color: white;
+          margin-bottom: 1.5rem;
           font-weight: 800;
           line-height: 1.3;
+          text-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
         }
 
         .hero-subtitle {
-          font-size: 1.375rem;
-          color: #64748b;
-          margin-bottom: 2.5rem;
+          font-size: 1.5rem;
+          color: rgba(255, 255, 255, 0.95);
+          margin-bottom: 3rem;
           line-height: 1.6;
-          max-width: 600px;
+          max-width: 700px;
           margin-left: auto;
           margin-right: auto;
+          text-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .hero-cta-buttons {
-          display: flex;
-          gap: 1.25rem;
-          justify-content: center;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-
-        .hero-button-primary,
-        .hero-button-secondary {
-          padding: 1.125rem 2.75rem;
-          border-radius: 14px;
+        .hero-explore-button {
+          padding: 1.125rem 3rem;
+          border-radius: 50px;
           font-size: 1.125rem;
           font-weight: 700;
           cursor: pointer;
           transition: all 0.3s ease;
-          border: none;
-          min-width: 180px;
-        }
-
-        .hero-button-primary {
-          background: linear-gradient(135deg, #0055f4 0%, #0080ff 100%);
+          background: transparent;
           color: white;
-          box-shadow: 0 4px 16px rgba(0, 85, 244, 0.3);
+          border: 2px solid white;
+          text-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .hero-button-secondary {
-          background: rgba(255, 255, 255, 0.9);
-          color: #0055f4;
-          border: 2px solid #0055f4;
-        }
-
-        .hero-button-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 24px rgba(0, 85, 244, 0.4);
-        }
-
-        .hero-button-secondary:hover {
-          background: white;
-          transform: translateY(-2px);
-          box-shadow: 0 6px 24px rgba(0, 85, 244, 0.2);
+        .hero-explore-button:hover {
+          background: rgba(0, 85, 244, 0.9);
+          border-color: rgba(0, 85, 244, 0.9);
+          transform: translateY(-3px);
+          box-shadow: 0 8px 24px rgba(0, 85, 244, 0.4);
         }
 
         /* Entry Section */
@@ -1543,9 +1506,7 @@ export default function LandingPage() {
           }
 
           .hero-content {
-            padding: 2.5rem 1.5rem;
-            margin: 0 1rem;
-            border-radius: 24px;
+            padding: 1.5rem 1rem;
           }
 
           .logo {
@@ -1553,23 +1514,17 @@ export default function LandingPage() {
           }
 
           .hero-title {
-            font-size: 1.5rem;
+            font-size: 1.875rem;
           }
 
           .hero-subtitle {
-            font-size: 1rem;
+            font-size: 1.125rem;
             margin-bottom: 2rem;
           }
 
-          .hero-cta-buttons {
-            flex-direction: column;
-            gap: 1rem;
-          }
-
-          .hero-button-primary,
-          .hero-button-secondary {
-            width: 100%;
-            min-width: unset;
+          .hero-explore-button {
+            padding: 1rem 2.5rem;
+            font-size: 1rem;
           }
 
           .section-title {
