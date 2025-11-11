@@ -201,15 +201,10 @@ export default function BuyerSearch() {
   return (
     <div className="buyer-search">
       <header className="page-header">
-        <div className="header-top">
-          <button onClick={() => navigate('/')} className="back-button">
-            ← 홈으로
-          </button>
-          <h1>부품 검색</h1>
-          <button onClick={() => setShowWatchModal(true)} className="watch-button">
-            관심 부품 알림 설정
-          </button>
-        </div>
+        <button onClick={() => navigate('/')} className="back-button">
+          ← 홈으로
+        </button>
+        <h1>부품 검색</h1>
 
         {/* AI 검색창 - 헤더 안 */}
         <div className="header-search">
@@ -225,6 +220,10 @@ export default function BuyerSearch() {
             </button>
           </form>
         </div>
+
+        <button onClick={() => setShowWatchModal(true)} className="watch-button">
+          관심 부품 알림 설정
+        </button>
       </header>
 
       <main className="search-layout">
@@ -492,23 +491,19 @@ export default function BuyerSearch() {
         .page-header {
           background: rgba(255, 255, 255, 0.95);
           backdrop-filter: blur(10px);
-          padding: 1.5rem 2rem 1rem 2rem;
+          padding: 1.5rem 2rem;
           box-shadow: 0 4px 20px rgba(58, 0, 187, 0.1);
           position: sticky;
           top: 0;
           z-index: 100;
-        }
-
-        .header-top {
           display: flex;
           align-items: center;
-          gap: 1rem;
-          margin-bottom: 1rem;
+          gap: 1.5rem;
         }
 
         .header-search {
-          max-width: 1200px;
-          margin: 0 auto;
+          flex: 1;
+          max-width: 800px;
         }
 
         .search-form {
@@ -579,7 +574,7 @@ export default function BuyerSearch() {
           margin: 0;
           color: #0055f4;
           font-size: 1.8rem;
-          flex: 1;
+          white-space: nowrap;
         }
 
         .watch-button {
@@ -1014,11 +1009,12 @@ export default function BuyerSearch() {
 
         @media (max-width: 1024px) {
           .page-header {
-            padding: 1.25rem 1.5rem 0.875rem 1.5rem;
+            padding: 1.25rem 1.5rem;
+            gap: 1rem;
           }
 
-          .header-top {
-            margin-bottom: 0.875rem;
+          .page-header h1 {
+            font-size: 1.5rem;
           }
 
           .search-form input[type="text"] {
@@ -1046,15 +1042,29 @@ export default function BuyerSearch() {
 
         @media (max-width: 768px) {
           .page-header {
-            padding: 1rem 1rem 0.75rem 1rem;
-          }
-
-          .header-top {
-            margin-bottom: 0.75rem;
+            padding: 1rem;
+            gap: 0.75rem;
+            flex-wrap: wrap;
           }
 
           .page-header h1 {
             font-size: 1.4rem;
+            order: 1;
+          }
+
+          .back-button {
+            order: 0;
+          }
+
+          .header-search {
+            order: 3;
+            width: 100%;
+            max-width: 100%;
+          }
+
+          .watch-button {
+            order: 2;
+            margin-left: auto;
           }
 
           .search-form input[type="text"] {
@@ -1114,10 +1124,6 @@ export default function BuyerSearch() {
         @media (max-width: 480px) {
           .page-header {
             padding: 0.875rem 0.75rem 0.625rem 0.75rem;
-          }
-
-          .header-top {
-            margin-bottom: 0.625rem;
           }
 
           .search-form input[type="text"] {
