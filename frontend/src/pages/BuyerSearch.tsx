@@ -521,16 +521,17 @@ export default function BuyerSearch() {
 
         .search-form textarea {
           width: 100%;
-          padding: 0.75rem 4rem 0.75rem 1.5rem;
+          padding: 0.5rem 4rem 0.5rem 1.5rem;
           border: 2px solid #d1d5db;
           border-radius: 50px;
-          font-size: 1rem;
+          font-size: 0.9375rem;
           font-family: inherit;
           resize: none;
           background: white;
           color: #1f2937;
           transition: all 0.2s ease;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+          line-height: 1.5;
         }
 
         .search-form textarea:focus {
@@ -541,6 +542,8 @@ export default function BuyerSearch() {
 
         .search-form textarea::placeholder {
           color: #9ca3af;
+          font-size: 0.875rem;
+          line-height: 1.5;
         }
 
         .search-arrow-btn {
@@ -1045,8 +1048,12 @@ export default function BuyerSearch() {
           }
 
           .search-form textarea {
-            font-size: 0.9375rem;
-            padding: 0.625rem 3.5rem 0.625rem 1.25rem;
+            font-size: 0.875rem;
+            padding: 0.5rem 3.5rem 0.5rem 1.25rem;
+          }
+
+          .search-form textarea::placeholder {
+            font-size: 0.8125rem;
           }
 
           .search-arrow-btn {
@@ -1099,9 +1106,13 @@ export default function BuyerSearch() {
           }
 
           .search-form textarea {
-            padding: 0.5rem 3rem 0.5rem 1rem;
-            font-size: 0.875rem;
+            padding: 0.375rem 3rem 0.375rem 1rem;
+            font-size: 0.8125rem;
             border-radius: 40px;
+          }
+
+          .search-form textarea::placeholder {
+            font-size: 0.75rem;
           }
 
           .search-arrow-btn {
