@@ -64,9 +64,18 @@ export default function LandingPage() {
         )}
       </div>
 
-      {/* Hero Section with Parallax */}
-      <section className="hero" style={{ transform: `translateY(${scrollY * 0.3}px)` }}>
-        <div className="hero-content">
+      {/* Hero Section with Animated Gradient Background */}
+      <section className="hero">
+        {/* Animated Background Blobs */}
+        <div className="animated-background">
+          <div className="blob blob-1"></div>
+          <div className="blob blob-2"></div>
+          <div className="blob blob-3"></div>
+          <div className="blob blob-4"></div>
+          <div className="blob blob-5"></div>
+        </div>
+
+        <div className="hero-content" style={{ transform: `translateY(${scrollY * 0.2}px)` }}>
           <div className="logo">EECAR</div>
           <h1 className="hero-title">전기차 중고 부품 B2B 거래 플랫폼</h1>
           <p className="hero-subtitle">
@@ -359,21 +368,144 @@ export default function LandingPage() {
           padding: 0 2rem;
         }
 
-        /* Hero Section */
+        /* Hero Section with Animated Gradient Mesh */
         .hero {
           min-height: 100vh;
           display: flex;
           align-items: center;
           justify-content: center;
-          background:
-            linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.6) 80%, white 100%),
-            linear-gradient(180deg, rgba(248, 250, 252, 0.75) 0%, rgba(255, 255, 255, 0.6) 100%),
-            url('/image/background.png');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
+          background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8fafc 100%);
           position: relative;
+          overflow: hidden;
           z-index: 1;
+        }
+
+        /* Animated Background Container */
+        .animated-background {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          z-index: 1;
+        }
+
+        /* Gradient Blobs */
+        .blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(80px);
+          opacity: 0.5;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+          animation-direction: alternate;
+        }
+
+        .blob-1 {
+          width: 600px;
+          height: 600px;
+          background: linear-gradient(135deg, #0055f4 0%, #0080ff 100%);
+          top: -10%;
+          left: -10%;
+          animation: float-1 25s infinite;
+        }
+
+        .blob-2 {
+          width: 500px;
+          height: 500px;
+          background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+          top: 20%;
+          right: -5%;
+          animation: float-2 28s infinite;
+        }
+
+        .blob-3 {
+          width: 550px;
+          height: 550px;
+          background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+          bottom: -10%;
+          left: 20%;
+          animation: float-3 30s infinite;
+        }
+
+        .blob-4 {
+          width: 450px;
+          height: 450px;
+          background: linear-gradient(135deg, #8b5cf6 0%, #0080ff 100%);
+          top: 40%;
+          left: 40%;
+          animation: float-4 26s infinite;
+        }
+
+        .blob-5 {
+          width: 520px;
+          height: 520px;
+          background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+          bottom: 15%;
+          right: 10%;
+          animation: float-5 32s infinite;
+        }
+
+        /* Blob Animation Keyframes */
+        @keyframes float-1 {
+          0%, 100% {
+            transform: translate(0, 0) rotate(0deg) scale(1);
+          }
+          33% {
+            transform: translate(50px, 80px) rotate(120deg) scale(1.1);
+          }
+          66% {
+            transform: translate(-30px, 40px) rotate(240deg) scale(0.95);
+          }
+        }
+
+        @keyframes float-2 {
+          0%, 100% {
+            transform: translate(0, 0) rotate(0deg) scale(1);
+          }
+          33% {
+            transform: translate(-60px, 70px) rotate(-120deg) scale(1.08);
+          }
+          66% {
+            transform: translate(40px, -50px) rotate(-240deg) scale(1.05);
+          }
+        }
+
+        @keyframes float-3 {
+          0%, 100% {
+            transform: translate(0, 0) rotate(0deg) scale(1);
+          }
+          33% {
+            transform: translate(70px, -60px) rotate(150deg) scale(1.12);
+          }
+          66% {
+            transform: translate(-50px, -30px) rotate(300deg) scale(0.98);
+          }
+        }
+
+        @keyframes float-4 {
+          0%, 100% {
+            transform: translate(0, 0) rotate(0deg) scale(1);
+          }
+          33% {
+            transform: translate(-40px, -70px) rotate(-150deg) scale(1.06);
+          }
+          66% {
+            transform: translate(60px, 50px) rotate(-300deg) scale(1.02);
+          }
+        }
+
+        @keyframes float-5 {
+          0%, 100% {
+            transform: translate(0, 0) rotate(0deg) scale(1);
+          }
+          33% {
+            transform: translate(-70px, 40px) rotate(180deg) scale(1.1);
+          }
+          66% {
+            transform: translate(50px, -60px) rotate(360deg) scale(0.96);
+          }
         }
 
         .hero::before {
@@ -393,7 +525,24 @@ export default function LandingPage() {
         .hero-content {
           text-align: center;
           position: relative;
-          z-index: 1;
+          z-index: 10;
+          padding: 4rem 3rem;
+          border-radius: 32px;
+          background: rgba(255, 255, 255, 0.75);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          box-shadow:
+            0 8px 32px 0 rgba(0, 85, 244, 0.15),
+            0 2px 8px 0 rgba(0, 0, 0, 0.05),
+            inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+          max-width: 1000px;
+          margin: 0 2rem;
+          transition: transform 0.3s ease;
+        }
+
+        .hero-content:hover {
+          transform: translateY(-5px) scale(1.01);
         }
 
         .logo {
@@ -1355,6 +1504,38 @@ export default function LandingPage() {
         }
         /* Responsive */
         @media (max-width: 768px) {
+          /* Blob sizes for mobile */
+          .blob-1 {
+            width: 400px;
+            height: 400px;
+          }
+
+          .blob-2 {
+            width: 350px;
+            height: 350px;
+          }
+
+          .blob-3 {
+            width: 380px;
+            height: 380px;
+          }
+
+          .blob-4 {
+            width: 320px;
+            height: 320px;
+          }
+
+          .blob-5 {
+            width: 360px;
+            height: 360px;
+          }
+
+          .hero-content {
+            padding: 2.5rem 1.5rem;
+            margin: 0 1rem;
+            border-radius: 24px;
+          }
+
           .logo {
             font-size: 3rem;
           }
