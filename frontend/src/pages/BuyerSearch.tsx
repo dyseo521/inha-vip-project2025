@@ -521,9 +521,9 @@ export default function BuyerSearch() {
 
         .search-form textarea {
           width: 100%;
-          padding: 1.25rem 5rem 1.25rem 1.5rem;
+          padding: 1.25rem 4rem 1.25rem 1.5rem;
           border: 2px solid #d1d5db;
-          border-radius: 32px;
+          border-radius: 50px;
           font-size: 1rem;
           font-family: inherit;
           resize: none;
@@ -545,16 +545,16 @@ export default function BuyerSearch() {
 
         .search-arrow-btn {
           position: absolute;
-          right: 0.5rem;
+          right: 0.375rem;
           top: 50%;
           transform: translateY(-50%);
-          width: 3.5rem;
-          height: 3.5rem;
+          width: 2.5rem;
+          height: 2.5rem;
           background: #0055f4;
           color: white;
           border: none;
           border-radius: 50%;
-          font-size: 1.5rem;
+          font-size: 1.125rem;
           font-weight: 300;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -562,11 +562,12 @@ export default function BuyerSearch() {
           align-items: center;
           justify-content: center;
           padding: 0;
+          line-height: 1;
         }
 
         .search-arrow-btn:hover:not(:disabled) {
           background: #0040c0;
-          transform: translateY(-50%) scale(1.05);
+          transform: translateY(-50%) scale(1.1);
         }
 
         .search-arrow-btn:disabled {
@@ -1045,13 +1046,13 @@ export default function BuyerSearch() {
 
           .search-form textarea {
             font-size: 0.9375rem;
-            padding: 1rem 4.5rem 1rem 1.25rem;
+            padding: 1rem 3.5rem 1rem 1.25rem;
           }
 
           .search-arrow-btn {
-            width: 3rem;
-            height: 3rem;
-            font-size: 1.25rem;
+            width: 2.25rem;
+            height: 2.25rem;
+            font-size: 1rem;
           }
 
           .search-layout {
@@ -1097,15 +1098,15 @@ export default function BuyerSearch() {
           }
 
           .search-form textarea {
-            padding: 0.875rem 4rem 0.875rem 1rem;
+            padding: 0.875rem 3rem 0.875rem 1rem;
             font-size: 0.875rem;
-            border-radius: 28px;
+            border-radius: 40px;
           }
 
           .search-arrow-btn {
-            width: 2.5rem;
-            height: 2.5rem;
-            font-size: 1rem;
+            width: 2rem;
+            height: 2rem;
+            font-size: 0.875rem;
             right: 0.375rem;
           }
 
