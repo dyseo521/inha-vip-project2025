@@ -125,7 +125,7 @@ export default function Signup() {
                     checked={isSeller}
                     onChange={(e) => setIsSeller(e.target.checked)}
                   />
-                  <span>💼 판매자로도 활동하기</span>
+                  <span> 💼 판매자로도 활동하기</span>
                 </label>
                 <p className="checkbox-hint">
                   부품을 판매하려면 체크해주세요
@@ -224,7 +224,7 @@ export default function Signup() {
           margin: 0 0 0.5rem 0;
           text-align: center;
           color: #1f2937;
-          font-size: 1.75rem;
+          font-size: 2.75rem;
         }
 
         .subtitle {
