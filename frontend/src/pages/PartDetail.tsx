@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import type { Part } from '@shared/index';
 import { useAuth } from '../context/AuthContext';
+import { mockParts } from '../data/mockParts';
 
 // 카테고리별 기본 이미지
 const categoryDefaultImages: Record<string, string> = {
@@ -24,6 +25,41 @@ const getPartImageUrl = (part: Part, index: number = 0): string => {
   return categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
 };
 
+// Mock 데이터를 Part 타입으로 변환
+const convertMockPartToPart = (mockPart: any): Part => {
+  const categoryMap: Record<string, string> = {
+    '배터리': 'battery',
+    '모터': 'motor',
+    '인버터': 'inverter',
+    '충전기': 'charger',
+    '전장 부품': 'electronics',
+    '차체': 'body',
+    '내장재': 'interior',
+    '기타': 'other'
+  };
+
+  const categoryEng = categoryMap[mockPart.category] || 'other';
+
+  return {
+    partId: mockPart.id,
+    name: mockPart.name,
+    category: categoryEng as any,
+    manufacturer: mockPart.manufacturer,
+    model: mockPart.model,
+    year: mockPart.year,
+    condition: 'used' as any,
+    price: mockPart.price,
+    quantity: mockPart.quantity,
+    sellerId: mockPart.seller?.company || 'demo-seller',
+    description: mockPart.description,
+    images: mockPart.images,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    specifications: mockPart.specifications,
+    useCases: mockPart.useCases
+  };
+};
+
 export default function PartDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -43,15 +79,25 @@ export default function PartDetail() {
     paymentTerms: '',
   });
 
-  // 백엔드 API에서 부품 데이터 가져오기
+  // 백엔드 API에서 부품 데이터 가져오기 (정적 호스팅 대응: mock 데이터 fallback)
   const { data: part, isLoading, error } = useQuery<Part>({
     queryKey: ['part', id],
     queryFn: async () => {
-      const response = await fetch(`/api/parts/${id}`);
-      if (!response.ok) {
+      try {
+        const response = await fetch(`/api/parts/${id}`);
+        if (!response.ok) {
+          throw new Error('부품을 찾을 수 없습니다');
+        }
+        return response.json();
+      } catch (error) {
+        console.log('API 호출 실패, mock 데이터 사용:', error);
+        // Mock 데이터에서 partId로 검색
+        const mockPart = mockParts.find(p => p.id === id);
+        if (mockPart) {
+          return convertMockPartToPart(mockPart);
+        }
         throw new Error('부품을 찾을 수 없습니다');
       }
-      return response.json();
     },
     enabled: !!id,
   });

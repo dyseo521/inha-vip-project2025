@@ -9,7 +9,11 @@ const categoryMap: Record<string, string> = {
   '배터리': 'battery',
   '모터': 'motor',
   '인버터': 'inverter',
+  '충전기': 'charger',
+  '전장 부품': 'electronics',
   '차체': 'body',
+  '내장재': 'interior',
+  '기타': 'other',
 };
 
 // 카테고리별 기본 이미지
@@ -200,7 +204,7 @@ export default function BuyerSearch() {
     return part.price >= priceRange[0] && part.price <= priceRange[1];
   }) || [];
 
-  const categories = ['all', '배터리', '모터', '인버터', '차체'];
+  const categories = ['all', '배터리', '모터', '인버터', '충전기', '전장 부품', '차체', '내장재', '기타'];
 
   // 예시 사례 데이터
   const exampleCases = [
