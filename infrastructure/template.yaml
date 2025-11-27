@@ -27,7 +27,7 @@ Resources:
     Properties:
       LayerName: eecar-utils-layer
       Description: Shared utilities for EECAR Lambda functions (DynamoDB, S3, Bedrock)
-      ContentUri: ../backend/dist/layer/
+      ContentUri: ../backend/dist/layer/nodejs/
       CompatibleRuntimes:
         - nodejs20.x
       RetentionPolicy: Retain

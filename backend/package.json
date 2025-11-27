@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "build:layer": "tsc -p tsconfig.layer.json",
+    "build": "tsc && node scripts/create-function-packages.js",
+    "build:layer": "tsc -p tsconfig.layer.json && echo '{\"name\":\"eecar-utils-layer\",\"version\":\"1.0.0\",\"type\":\"module\"}' > dist/layer/nodejs/package.json",
     "build:all": "npm run build && npm run build:layer",
     "watch": "tsc --watch",
     "test": "jest",
