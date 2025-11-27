@@ -194,6 +194,40 @@ Resources:
             Path: /api/synthetic
             Method: POST
 
+  BatteryHealthAssessmentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/dist/functions/battery-health-assessment/
+      Handler: index.handler
+      Description: Battery SOH-based advanced search with reuse/recycle assessment
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref PartsTable
+      Events:
+        BatteryHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EECARApi
+            Path: /api/battery-health
+            Method: POST
+
+  MaterialPropertySearchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/dist/functions/material-property-search/
+      Handler: index.handler
+      Description: Material property-based search for aluminum alloys and specifications
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref PartsTable
+      Events:
+        MaterialSearch:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EECARApi
+            Path: /api/material-search
+            Method: POST
+
   # DynamoDB Table (Single-table design for cost optimization)
   PartsTable:
     Type: AWS::DynamoDB::Table
@@ -291,6 +325,18 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${ComplianceCheckFunction}'
+      RetentionInDays: 7
+
+  BatteryHealthAssessmentLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${BatteryHealthAssessmentFunction}'
+      RetentionInDays: 7
+
+  MaterialPropertySearchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${MaterialPropertySearchFunction}'
       RetentionInDays: 7
 
 Outputs:
