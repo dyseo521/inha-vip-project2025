@@ -36,6 +36,8 @@ npm-debug.log*
 .aws-sam/
 samconfig.toml
 docs/IAM_POLICY_*.json
+docs/DEPLOYMENT.md
+DEPLOY_LOCAL.md
 
 # Test coverage
 coverage/

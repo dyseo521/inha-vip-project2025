@@ -161,29 +161,27 @@ sam local start-api --port 3001
 
 ### AWS 배포
 
-1. **백엔드 배포 (Lambda + API Gateway + DynamoDB)**
+**상세 배포 가이드는 로컬 파일 참조**: `DEPLOY_LOCAL.md`
+
+기본 배포 절차:
+
 ```bash
-cd infrastructure
+# 1. Shared 타입 빌드
+cd shared && npm run build
+
+# 2. Backend TypeScript 컴파일
+cd ../backend && npm run build
+
+# 3. SAM 배포
+cd ../infrastructure
 sam build
-sam deploy --guided
+sam deploy
 ```
 
-첫 배포 시 다음 정보를 입력:
-- Stack Name: `eecar-stack`
-- AWS Region: `us-east-1` (Bedrock 사용 가능 리전)
-- Confirm changes: Y
-- Allow SAM CLI IAM role creation: Y
-- Save arguments to configuration file: Y
-
-2. **프론트엔드 배포 (S3 + CloudFront)**
-```bash
-cd frontend
-npm run build
-
-# S3 버킷에 업로드
-aws s3 sync dist/ s3://your-frontend-bucket/
-aws cloudfront create-invalidation --distribution-id YOUR_DIST_ID --paths "/*"
-```
+**⚠️ 주의**:
+- IAM 권한 설정 필요 (`DEPLOY_LOCAL.md` 참조)
+- 배포 후 Bedrock 모델 활성화 필수
+- 프론트엔드 `.env` 파일 설정 필요
 
 ### 정적 호스팅 (백엔드 불필요)
 
