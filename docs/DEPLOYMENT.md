@@ -69,38 +69,45 @@ aws sts get-caller-identity
 
 **⚠️ 주의사항**:
 - 배포는 위 계정의 `ap-northeast-2` (서울) 리전에 이루어집니다
-- IAM 사용자는 다음 권한이 필요합니다 (**2가지 옵션 중 선택**):
+- IAM 사용자는 다음 권한이 필요합니다
 
-#### Option 1: AWS Managed Policies (권장 - 간편)
+### 필수 IAM 권한 설정
 
-AWS Console → IAM → Users → [사용자 선택] → Permissions → Add permissions에서 다음 **8개 Managed Policies** 연결:
+**보안상 최소 권한 원칙(Least Privilege)을 적용하여 Custom Policy 사용을 강력히 권장합니다.**
 
-```
-1. AWSCloudFormationFullAccess
-2. IAMFullAccess
-3. AWSLambda_FullAccess
-4. AmazonAPIGatewayAdministrator
-5. AmazonS3FullAccess
-6. AmazonDynamoDBFullAccess
-7. AmazonSNSFullAccess
-8. CloudWatchLogsFullAccess
-```
+#### ⚠️ AWS Managed Policies의 문제점
 
-#### Option 2: Custom IAM Policy (최소 권한 원칙)
+AWS 문서에서 제시하는 Managed Policies(예: IAMFullAccess, S3FullAccess)는 **과도한 권한**을 부여하여 보안 위험이 있습니다:
 
-보안을 위해 IAM 정책 파일(`docs/IAM_POLICY_SAM_DEPLOY.json`)은 로컬에만 보관되며 GitHub에 업로드되지 않습니다.
+- `IAMFullAccess`: 모든 IAM 사용자/역할 생성/삭제 가능 → **권한 상승 공격 가능**
+- `S3FullAccess`: 모든 S3 버킷 접근 가능 → 우리는 2개 버킷만 필요
+- `DynamoDBFullAccess`: 모든 DynamoDB 테이블 접근 가능 → 우리는 1개 테이블만 필요
 
-**직접 생성 방법**:
-1. AWS Console → IAM → Policies → Create policy
-2. JSON 탭 선택
-3. `docs/IAM_POLICY_SAM_DEPLOY.json` 파일 내용 복사/붙여넣기
-4. 정책 이름: `EECARSAMDeployPolicy`
-5. 생성 후 IAM 사용자에게 연결
+#### ✅ 권장: Custom IAM Policy (최소 권한)
 
-**⚠️ 중요**:
-- Bedrock 권한은 **배포 시 불필요**합니다
-- Bedrock은 Lambda 함수 **실행 시**에만 필요하며, template.yaml에 이미 Lambda 실행 역할 정의가 포함되어 있습니다
-- IAM 정책 JSON 파일은 보안상 `.gitignore`에 추가되어 있습니다
+보안을 위해 정확한 IAM 정책은 **로컬 파일에만 보관**됩니다:
+
+**설정 방법**:
+1. `docs/IAM_POLICY_SAM_DEPLOY.json` 파일 열기 (로컬에만 존재)
+2. AWS Console → IAM → Policies → **Create policy**
+3. JSON 탭 선택
+4. 파일 내용 복사/붙여넿기
+5. 정책 이름: `EECARSAMDeployPolicy`
+6. **Create policy** 클릭
+7. IAM → Users → [사용자 선택] → **Add permissions**
+8. `EECARSAMDeployPolicy` 연결
+
+**이 정책의 특징**:
+- CloudFormation 스택 `eecar-stack`에만 작동
+- IAM 역할 생성은 `eecar-stack-*` 패턴으로 제한
+- S3는 `eecar-vectors-*`, `eecar-documents-*` 버킷만
+- DynamoDB는 `eecar-parts-table` 테이블만
+- Lambda는 `eecar-stack-*` 함수만
+
+**⚠️ 중요 보안 사항**:
+- Bedrock 권한은 **배포 시 불필요** (Lambda 실행 시에만 필요)
+- IAM 정책 JSON 파일은 `.gitignore`에 추가되어 GitHub에 업로드되지 않음
+- 절대 IAMFullAccess 같은 과도한 권한 사용 금지
 
 ### AWS Credentials 재설정 (필요 시)
 
