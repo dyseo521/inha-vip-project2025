@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { getItem, queryByPK, queryGSI1 } from '../../utils/dynamodb';
+import { getItem, queryByPK, queryGSI1 } from '/opt/nodejs/utils/dynamodb.js';
 
 /**
  * Get Parts Lambda Function

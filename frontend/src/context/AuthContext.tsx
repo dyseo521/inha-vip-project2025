@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getApiUrl } from '../config';
 
 interface User {
   id: string;
@@ -46,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(getApiUrl('auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -77,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     companyName?: string
   ) => {
     try {
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetch(getApiUrl('auth/signup'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name, role, companyName }),

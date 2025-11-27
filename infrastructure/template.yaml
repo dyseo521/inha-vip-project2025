@@ -13,7 +13,7 @@ Globals:
         VECTORS_BUCKET_NAME: !Ref VectorsBucket
         DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucket
         SNS_TOPIC_ARN: !Ref NotificationTopic
-        BEDROCK_MODEL_ID: amazon.titan-text-express-v1  # Cost-optimized
+        BEDROCK_MODEL_ID: anthropic.claude-3-haiku-20240307-v1:0  # Cost-optimized for text generation (Titan is for embeddings)
   Api:
     Cors:
       AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
@@ -21,6 +21,19 @@ Globals:
       AllowOrigin: "'*'"
 
 Resources:
+  # Lambda Layer for shared utilities
+  EECARUtilsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: eecar-utils-layer
+      Description: Shared utilities for EECAR Lambda functions (DynamoDB, S3, Bedrock)
+      ContentUri: ../backend/dist/layer/
+      CompatibleRuntimes:
+        - nodejs20.x
+      RetentionPolicy: Retain
+    Metadata:
+      BuildMethod: nodejs20.x
+
   # API Gateway
   EECARApi:
     Type: AWS::Serverless::Api
@@ -36,6 +49,8 @@ Resources:
       CodeUri: ../backend/dist/functions/vector-search/
       Handler: index.handler
       Description: AI-powered vector search for parts matching
+      Layers:
+        - !Ref EECARUtilsLayer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PartsTable
@@ -62,6 +77,8 @@ Resources:
       Description: Register new parts and generate embeddings
       MemorySize: 1024  # Higher memory for embedding generation
       Timeout: 60  # Longer timeout for AI processing
+      Layers:
+        - !Ref EECARUtilsLayer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PartsTable
@@ -90,6 +107,8 @@ Resources:
       CodeUri: ../backend/dist/functions/compliance-check/
       Handler: index.handler
       Description: Validate parts against compliance rules (invoked by part registration)
+      Layers:
+        - !Ref EECARUtilsLayer
       Policies:
         - S3ReadPolicy:
             BucketName: !Ref DocumentsBucket
@@ -107,6 +126,8 @@ Resources:
       CodeUri: ../backend/dist/functions/get-parts/
       Handler: index.handler
       Description: Retrieve parts information
+      Layers:
+        - !Ref EECARUtilsLayer
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref PartsTable
@@ -130,6 +151,8 @@ Resources:
       CodeUri: ../backend/dist/functions/watch-part/
       Handler: index.handler
       Description: Register alerts for desired parts
+      Layers:
+        - !Ref EECARUtilsLayer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PartsTable
@@ -149,6 +172,8 @@ Resources:
       CodeUri: ../backend/dist/functions/proposal/
       Handler: index.handler
       Description: Handle B2B contract proposals
+      Layers:
+        - !Ref EECARUtilsLayer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PartsTable
@@ -176,6 +201,8 @@ Resources:
       Description: Generate synthetic part data using MCP-style tools
       MemorySize: 1024
       Timeout: 120  # Longer for bulk generation
+      Layers:
+        - !Ref EECARUtilsLayer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PartsTable
@@ -202,6 +229,8 @@ Resources:
       CodeUri: ../backend/dist/functions/battery-health-assessment/
       Handler: index.handler
       Description: Battery SOH-based advanced search with reuse/recycle assessment
+      Layers:
+        - !Ref EECARUtilsLayer
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref PartsTable
@@ -219,6 +248,8 @@ Resources:
       CodeUri: ../backend/dist/functions/material-property-search/
       Handler: index.handler
       Description: Material property-based search for aluminum alloys and specifications
+      Layers:
+        - !Ref EECARUtilsLayer
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref PartsTable

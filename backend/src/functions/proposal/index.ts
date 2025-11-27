@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 import { v4 as uuidv4 } from 'uuid';
-import { putItem, queryGSI1 } from '../../utils/dynamodb';
+import { putItem, queryGSI1 } from '/opt/nodejs/utils/dynamodb.js';
 
 const snsClient = new SNSClient({});
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN!;

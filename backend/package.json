@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "build:layer": "tsc -p tsconfig.layer.json",
+    "build:all": "npm run build && npm run build:layer",
     "watch": "tsc --watch",
     "test": "jest",
     "lint": "eslint . --ext ts"

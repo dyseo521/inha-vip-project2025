@@ -1,6 +1,6 @@
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
-import { callClaude } from '../../utils/bedrock';
-import { getDocument } from '../../utils/s3';
+import { callClaude } from '/opt/nodejs/utils/bedrock.js';
+import { getDocument } from '/opt/nodejs/utils/s3.js';
 
 const snsClient = new SNSClient({});
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN!;

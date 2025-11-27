@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import type { SearchRequest, SearchResponse, Part, WatchCriteria } from '@shared/index';
 import { mockParts } from '../data/mockParts';
+import { getApiUrl } from '../config';
 
 // 카테고리 매핑 (한글 -> 영문)
 const categoryMap: Record<string, string> = {
@@ -106,7 +107,7 @@ export default function BuyerSearch() {
     queryFn: async () => {
       if (!searchParams) return null;
 
-      const response = await fetch('/api/search', {
+      const response = await fetch(getApiUrl('search'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(searchParams),
@@ -133,7 +134,7 @@ export default function BuyerSearch() {
         batteryFilters.cathodeType = selectedCathodeTypes;
       }
 
-      const response = await fetch('/api/battery-health', {
+      const response = await fetch(getApiUrl('battery-health'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ batteryFilters, topK: 20 }),
@@ -170,7 +171,7 @@ export default function BuyerSearch() {
         payload.category = categoryMap[selectedCategory] || selectedCategory;
       }
 
-      const response = await fetch('/api/material-search', {
+      const response = await fetch(getApiUrl('material-search'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -192,10 +193,12 @@ export default function BuyerSearch() {
     queryFn: async () => {
       try {
         // 전체 카테고리인 경우 카테고리 필터 없이 모든 부품 조회
-        let url = '/api/parts?limit=50';
+        let url: string;
         if (selectedCategory !== 'all') {
           const category = categoryMap[selectedCategory] || selectedCategory;
-          url = `/api/parts?category=${category}&limit=50`;
+          url = getApiUrl(`parts?category=${category}&limit=50`);
+        } else {
+          url = getApiUrl('parts?limit=50');
         }
 
         const response = await fetch(url);
@@ -235,7 +238,7 @@ export default function BuyerSearch() {
       email: string;
       criteria: WatchCriteria;
     }) => {
-      const response = await fetch('/api/watch', {
+      const response = await fetch(getApiUrl('watch'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(watchData),

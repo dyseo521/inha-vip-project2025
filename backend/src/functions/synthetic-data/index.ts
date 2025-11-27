@@ -1,8 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { v4 as uuidv4 } from 'uuid';
-import { callClaude, generateEmbedding, preparePartText } from '../../utils/bedrock';
-import { uploadVector, updateVectorsManifest } from '../../utils/s3';
-import { putItem } from '../../utils/dynamodb';
+import { callClaude, generateEmbedding, preparePartText } from '/opt/nodejs/utils/bedrock.js';
+import { uploadVector, updateVectorsManifest } from '/opt/nodejs/utils/s3.js';
+import { putItem } from '/opt/nodejs/utils/dynamodb.js';
 
 /**
  * Synthetic Data Lambda Function

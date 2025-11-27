@@ -1,8 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import crypto from 'crypto';
-import { generateEmbedding, findTopKSimilar, callClaude } from '../../utils/bedrock';
-import { getVector, listVectorKeys } from '../../utils/s3';
-import { getItem, putItem, queryGSI1, batchGetItems } from '../../utils/dynamodb';
+import { generateEmbedding, findTopKSimilar, callClaude } from '/opt/nodejs/utils/bedrock.js';
+import { getVector, listVectorKeys } from '/opt/nodejs/utils/s3.js';
+import { getItem, putItem, queryGSI1, batchGetItems } from '/opt/nodejs/utils/dynamodb.js';
 
 /**
  * Vector Search Lambda Function

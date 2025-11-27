@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import type { Part } from '@shared/index';
 import { useAuth } from '../context/AuthContext';
 import { mockParts } from '../data/mockParts';
+import { getApiUrl } from '../config';
 
 // 카테고리별 기본 이미지
 const categoryDefaultImages: Record<string, string> = {
@@ -88,7 +89,7 @@ export default function PartDetail() {
     queryKey: ['part', id],
     queryFn: async () => {
       try {
-        const response = await fetch(`/api/parts/${id}`);
+        const response = await fetch(getApiUrl(`parts/${id}`));
         if (!response.ok) {
           throw new Error('부품을 찾을 수 없습니다');
         }
@@ -109,7 +110,7 @@ export default function PartDetail() {
   // Proposal 생성 mutation - Hook은 항상 최상위에서 호출
   const createProposalMutation = useMutation({
     mutationFn: async (proposal: any) => {
-      const response = await fetch('/api/proposals', {
+      const response = await fetch(getApiUrl('proposals'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(proposal),

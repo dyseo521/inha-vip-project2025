@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseCase } from '@shared/index';
+import { getApiUrl } from '../config';
 
 // 카테고리별 사양 필드 정의
 const categorySpecFields: Record<string, { label: string; placeholder: string; key: string }[]> = {
@@ -105,7 +106,7 @@ export default function SellerDashboard() {
   // 부품 등록 mutation
   const registerPartMutation = useMutation({
     mutationFn: async (partData: any) => {
-      const response = await fetch('/api/parts', {
+      const response = await fetch(getApiUrl('parts'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(partData),
