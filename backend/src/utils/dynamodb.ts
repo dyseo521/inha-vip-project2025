@@ -1,5 +1,5 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, UpdateCommand, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, UpdateCommand, BatchGetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 const client = new DynamoDBClient({});
 export const ddbDocClient = DynamoDBDocumentClient.from(client);
@@ -126,4 +126,19 @@ export async function batchGetItems(keys: Array<{ pk: string; sk: string }>): Pr
 
   const response = await ddbDocClient.send(command);
   return response.Responses?.[TABLE_NAME] as DynamoDBItem[] || [];
+}
+
+/**
+ * Scan table with optional filter
+ */
+export async function scanTable(filterExpression?: string, expressionAttributeValues?: Record<string, any>, limit?: number): Promise<DynamoDBItem[]> {
+  const command = new ScanCommand({
+    TableName: TABLE_NAME,
+    ...(filterExpression && { FilterExpression: filterExpression }),
+    ...(expressionAttributeValues && { ExpressionAttributeValues: expressionAttributeValues }),
+    ...(limit && { Limit: limit }),
+  });
+
+  const response = await ddbDocClient.send(command);
+  return response.Items as DynamoDBItem[] || [];
 }

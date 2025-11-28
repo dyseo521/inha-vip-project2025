@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { getItem, queryByPK, queryGSI1 } from '/opt/nodejs/utils/dynamodb.js';
+import { getItem, queryByPK, queryGSI1, scanTable } from '/opt/nodejs/utils/dynamodb.js';
 import { successResponse, errorResponse } from '/opt/nodejs/utils/response.js';
 
 /**
@@ -56,19 +56,19 @@ async function getPartById(partId: string, event: APIGatewayProxyEvent): Promise
  * List parts with filters
  */
 async function listParts(params: any, event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-  const { category, limit = 20 } = params;
+  const { category, limit = 50 } = params;
 
   let parts = [];
 
   if (category) {
-    // Query by category
+    // Query by category using GSI
     parts = await queryGSI1(`CATEGORY#${category}`, 'CREATED_AT#', parseInt(limit));
   } else {
-    // For now, return empty (in production, implement pagination or default category)
-    return errorResponse('Category filter is required', undefined, 400, event);
+    // Scan for all METADATA records (no category filter)
+    parts = await scanTable('SK = :sk', { ':sk': 'METADATA' }, parseInt(limit));
   }
 
-  // Filter to only metadata records
+  // Filter to only metadata records and format
   const metadata = parts.map(p => {
     const { PK, SK, GSI1PK, GSI1SK, ...data } = p;
     return {

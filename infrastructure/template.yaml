@@ -346,6 +346,14 @@ Resources:
       TopicName: eecar-notifications
       DisplayName: EECAR Platform Notifications
 
+  # Email Subscription for Notifications
+  NotificationEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref NotificationTopic
+      Endpoint: inha2025vip@gmail.com
+
   # CloudWatch Log Groups (with retention for cost control)
   VectorSearchLogGroup:
     Type: AWS::Logs::LogGroup
