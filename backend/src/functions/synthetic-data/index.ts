@@ -48,24 +48,42 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
  * Generate a synthetic part using Claude
  */
 async function generateSyntheticPart(category: string, template?: any): Promise<any> {
+  // 카테고리별 현실적인 가격 범위 설정
+  const priceRanges: Record<string, { min: number; max: number }> = {
+    'battery': { min: 3000000, max: 15000000 },  // 배터리: 300만원 ~ 1500만원
+    'motor': { min: 2000000, max: 8000000 },     // 모터: 200만원 ~ 800만원
+    'inverter': { min: 1500000, max: 5000000 },  // 인버터: 150만원 ~ 500만원
+    'body-chassis-frame': { min: 200000, max: 1500000 },  // 차체 프레임: 20만원 ~ 150만원
+    'body-panel': { min: 100000, max: 800000 },  // 외판 패널: 10만원 ~ 80만원
+    'body-door': { min: 150000, max: 1000000 },  // 도어: 15만원 ~ 100만원
+    'body-window': { min: 50000, max: 500000 },  // 윈도우: 5만원 ~ 50만원
+    'default': { min: 100000, max: 1000000 }     // 기타: 10만원 ~ 100만원
+  };
+
+  const priceRange = priceRanges[category] || priceRanges['default'];
+
   const prompt = `전기차 중고 부품 데이터베이스를 위한 샘플 데이터를 생성해주세요.
 
 카테고리: ${category}
 
+**중요**: 가격은 반드시 ${priceRange.min.toLocaleString()}원 ~ ${priceRange.max.toLocaleString()}원 범위 내에서 현실적으로 설정하세요.
+- 카테고리가 "${category}"인 실제 중고 전기차 부품의 시장 가격을 고려하세요.
+- 제조사, 연식, 상태에 따라 가격이 달라져야 합니다.
+
 다음 형식으로 JSON을 생성해주세요:
 {
-  "name": "부품명",
+  "name": "부품명 (구체적으로, 예: 현대 IONIQ 5 배터리팩 72kWh)",
   "category": "${category}",
-  "manufacturer": "제조사",
-  "model": "차량 모델",
-  "year": 2015,
+  "manufacturer": "제조사 (예: 현대, 기아, 테슬라, LG에너지솔루션 등)",
+  "model": "차량 모델 (예: IONIQ 5, EV6, Model 3 등)",
+  "year": 2018,
   "condition": "used",
-  "price": 100000,
+  "price": ${Math.floor((priceRange.min + priceRange.max) / 2)},
   "quantity": 1,
-  "description": "상세 설명",
+  "description": "상세하고 현실적인 설명 (부품 상태, 주행거리, 특이사항 등)",
   "specifications": {
     "materialComposition": {
-      "primary": "주 소재",
+      "primary": "주 소재 (알루미늄, 강철, 리튬이온 등)",
       "secondary": ["부 소재들"]
     },
     "dimensions": {
@@ -83,14 +101,15 @@ async function generateSyntheticPart(category: string, template?: any): Promise<
   },
   "useCases": [
     {
-      "industry": "산업 분야",
+      "industry": "산업 분야 (예: 자동차 수리, ESS 전환, 재활용 등)",
       "application": "활용처",
-      "description": "설명"
+      "description": "구체적인 설명"
     }
   ]
 }
 
-현실적이고 구체적인 데이터를 생성해주세요. JSON만 출력하고 다른 설명은 하지 마세요.`;
+현실적이고 구체적인 데이터를 생성해주세요. 특히 가격은 위에 명시된 범위 내에서 설정하세요.
+JSON만 출력하고 다른 설명은 하지 마세요.`;
 
   try {
     const response = await callClaude(
