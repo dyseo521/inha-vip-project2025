@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# package-lock.json은 의존성 버전 고정을 위해 커밋
 yarn.lock
 # Build outputs
 dist/
