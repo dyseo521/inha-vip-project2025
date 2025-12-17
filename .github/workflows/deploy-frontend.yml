@@ -13,11 +13,9 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
-    name: Deploy to AWS S3 + CloudFront
+  build:
+    name: Build Frontend
     runs-on: ubuntu-latest
-    environment:
-      name: production
 
     steps:
       - name: Checkout code
@@ -40,8 +38,47 @@ jobs:
         env:
           VITE_API_URL: https://6o4futufni.execute-api.ap-northeast-2.amazonaws.com/prod
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 1
+
+  deploy:
+    name: Deploy to AWS S3 + CloudFront
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: production
+
+    steps:
+      - name: Notify Slack - Deployment Started
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "attachments": [{
+                "color": "warning",
+                "title": "🚀 EECAR Frontend 배포 시작",
+                "fields": [
+                  {"title": "배포자", "value": "${{ github.actor }}", "short": true},
+                  {"title": "브랜치", "value": "${{ github.ref_name }}", "short": true},
+                  {"title": "커밋", "value": "`${{ github.sha }}`", "short": false}
+                ],
+                "footer": "GitHub Actions",
+                "ts": '"$(date +%s)"'
+              }]
+            }'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
@@ -73,4 +110,44 @@ jobs:
           echo "⚡ CloudFront Distribution: \`${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}\`" >> $GITHUB_STEP_SUMMARY
           echo "🔄 Cache invalidated" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**URL**: https://${{ secrets.CLOUDFRONT_DISTRIBUTION_DOMAIN }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify Slack - Deployment Success
+        if: success()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "attachments": [{
+                "color": "good",
+                "title": "✅ EECAR Frontend 배포 완료",
+                "fields": [
+                  {"title": "브랜치", "value": "${{ github.ref_name }}", "short": true},
+                  {"title": "배포 시간", "value": "'"$(date '+%Y-%m-%d %H:%M:%S KST')"'", "short": true},
+                  {"title": "CloudFront URL", "value": "https://${{ secrets.CLOUDFRONT_DISTRIBUTION_DOMAIN }}", "short": false}
+                ],
+                "footer": "GitHub Actions",
+                "ts": '"$(date +%s)"'
+              }]
+            }'
+
+      - name: Notify Slack - Deployment Failed
+        if: failure()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "attachments": [{
+                "color": "danger",
+                "title": "❌ EECAR Frontend 배포 실패",
+                "fields": [
+                  {"title": "브랜치", "value": "${{ github.ref_name }}", "short": true},
+                  {"title": "배포자", "value": "${{ github.actor }}", "short": true},
+                  {"title": "에러", "value": "S3 또는 CloudFront 배포 중 오류 발생", "short": false},
+                  {"title": "Actions 로그", "value": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false}
+                ],
+                "footer": "GitHub Actions",
+                "ts": '"$(date +%s)"'
+              }]
+            }'
