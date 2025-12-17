@@ -18,7 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://${{ secrets.CLOUDFRONT_DISTRIBUTION_DOMAIN }}
 
     steps:
       - name: Checkout code
