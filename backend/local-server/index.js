@@ -82,7 +82,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// ==================== SEARCH API ====================
+// ==================== SEARCH API (RAG Enhanced Simulation) ====================
 app.post('/api/search', async (req, res) => {
   try {
     const { query, filters, topK = 10 } = req.body;
@@ -93,39 +93,156 @@ app.post('/api/search', async (req, res) => {
 
     console.log(`[SEARCH] Query: "${query}", Filters:`, filters);
 
-    let results = mockParts.filter(part => {
-      const searchText = `${part.name} ${part.description} ${part.category} ${part.manufacturer}`.toLowerCase();
-      return searchText.includes(query.toLowerCase());
-    });
+    // Step 1: Query Expansion (simulated)
+    const expandedQueries = simulateQueryExpansion(query);
+    console.log(`[SEARCH] Expanded queries:`, expandedQueries);
 
-    // Apply filters
+    // Step 2: Search with all expanded queries
+    let candidateSet = new Set();
+    for (const q of expandedQueries) {
+      mockParts.forEach(part => {
+        const searchText = `${part.name} ${part.description} ${part.category} ${part.manufacturer}`.toLowerCase();
+        if (searchText.includes(q.toLowerCase())) {
+          candidateSet.add(part.partId);
+        }
+      });
+    }
+
+    let candidates = mockParts.filter(p => candidateSet.has(p.partId));
+
+    // Step 3: Apply filters
     if (filters) {
       if (filters.category) {
-        results = results.filter(p => p.category === filters.category);
+        candidates = candidates.filter(p => p.category === filters.category);
       }
       if (filters.maxPrice) {
-        results = results.filter(p => p.price <= filters.maxPrice);
+        candidates = candidates.filter(p => p.price <= filters.maxPrice);
       }
       if (filters.minQuantity) {
-        results = results.filter(p => p.quantity >= filters.minQuantity);
+        candidates = candidates.filter(p => p.quantity >= filters.minQuantity);
       }
     }
 
-    results = results.slice(0, topK);
+    // Step 4: Hybrid scoring (simulated vector + BM25)
+    const scoredResults = candidates.map(part => {
+      const vectorScore = calculateMockVectorScore(query, part);
+      const bm25Score = calculateMockBM25Score(query, part);
+      const hybridScore = 0.7 * vectorScore + 0.3 * bm25Score;
 
-    const searchResults = results.map((part, index) => ({
-      partId: part.partId,
-      score: 0.9 - (index * 0.05),
-      part,
-      reason: `"${query}"와 관련된 ${part.category} 부품입니다.`,
-    }));
+      return {
+        part,
+        vectorScore,
+        bm25Score,
+        hybridScore,
+      };
+    });
 
-    res.json({ results: searchResults, cached: false, count: searchResults.length });
+    // Step 5: Sort by hybrid score
+    scoredResults.sort((a, b) => b.hybridScore - a.hybridScore);
+
+    // Step 6: Re-ranking simulation (top candidates get bonus)
+    const rerankedResults = scoredResults.slice(0, topK).map((result, index) => {
+      const rerankBonus = index < 3 ? 0.05 : 0; // Top 3 get bonus
+      const finalScore = Math.min(0.99, result.hybridScore + rerankBonus);
+
+      return {
+        partId: result.part.partId,
+        score: finalScore,
+        searchScores: {
+          hybrid: result.hybridScore,
+          vector: result.vectorScore,
+          bm25: result.bm25Score,
+        },
+        part: result.part,
+        reason: generateSearchReason(query, result.part, finalScore),
+      };
+    });
+
+    console.log(`[SEARCH] Found ${rerankedResults.length} results (RAG enhanced)`);
+
+    res.json({
+      results: rerankedResults,
+      expandedQueries,
+      cached: false,
+      count: rerankedResults.length,
+      searchMethod: 'hybrid_rag_enhanced',
+    });
   } catch (error) {
     console.error('[SEARCH ERROR]', error);
     res.status(500).json({ error: 'Search failed', message: error.message });
   }
 });
+
+// ==================== RAG Helper Functions ====================
+
+/**
+ * Simulate query expansion (local mock)
+ */
+function simulateQueryExpansion(query) {
+  const expansionMap = {
+    '배터리': ['배터리', '배터리 팩', '리튬이온 셀', '에너지 저장'],
+    '모터': ['모터', '구동 모터', 'PMSM', '전동기'],
+    '인버터': ['인버터', 'DC-AC 변환기', '전력 변환', 'IGBT'],
+    '도어': ['도어', '문', '차체 외장', '도어 패널'],
+    '창문': ['창문', '유리', '윈드실드', '사이드 글라스'],
+    '프레임': ['프레임', '차체', '섀시', '구조물'],
+  };
+
+  // Find matching expansion or create generic one
+  for (const [key, expansions] of Object.entries(expansionMap)) {
+    if (query.includes(key)) {
+      return expansions;
+    }
+  }
+
+  // Default expansion: original + category-based
+  return [query, `${query} 부품`, `전기차 ${query}`];
+}
+
+/**
+ * Mock vector similarity score (0-1)
+ */
+function calculateMockVectorScore(query, part) {
+  const queryWords = query.toLowerCase().split(/\s+/);
+  const partText = `${part.name} ${part.description} ${part.category}`.toLowerCase();
+
+  let matches = 0;
+  queryWords.forEach(word => {
+    if (partText.includes(word)) matches++;
+  });
+
+  const baseScore = queryWords.length > 0 ? matches / queryWords.length : 0;
+  return Math.min(0.95, baseScore * 0.8 + Math.random() * 0.15);
+}
+
+/**
+ * Mock BM25 keyword score (0-1)
+ */
+function calculateMockBM25Score(query, part) {
+  const queryTerms = query.toLowerCase().split(/\s+/);
+  const partText = `${part.name} ${part.manufacturer} ${part.category}`.toLowerCase();
+
+  let termScore = 0;
+  queryTerms.forEach(term => {
+    const count = (partText.match(new RegExp(term, 'g')) || []).length;
+    termScore += Math.log(1 + count);
+  });
+
+  return Math.min(0.95, termScore / (queryTerms.length + 1));
+}
+
+/**
+ * Generate search reason based on score
+ */
+function generateSearchReason(query, part, score) {
+  if (score >= 0.85) {
+    return `"${query}" 검색에 가장 적합한 ${part.category} 부품입니다. ${part.manufacturer} 제조.`;
+  } else if (score >= 0.7) {
+    return `${part.name}은(는) "${query}" 요구사항과 높은 관련성을 보입니다.`;
+  } else {
+    return `${part.category} 카테고리의 관련 부품입니다.`;
+  }
+}
 
 // ==================== MATERIAL PROPERTY SEARCH API ====================
 app.post('/api/material-search', async (req, res) => {
