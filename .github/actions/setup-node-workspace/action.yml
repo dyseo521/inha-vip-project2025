@@ -20,29 +20,9 @@ runs:
         node-version: ${{ inputs.node-version }}
         cache: 'npm'
 
-    - name: Install root dependencies
-      run: npm ci
-      shell: bash
-
-    - name: Install workspace dependencies
+    - name: Install all dependencies
       run: npm run install:all
       shell: bash
-      continue-on-error: true
-
-    - name: Install frontend dependencies
-      run: cd frontend && npm ci
-      shell: bash
-      continue-on-error: true
-
-    - name: Install backend dependencies
-      run: cd backend && npm ci
-      shell: bash
-      continue-on-error: true
-
-    - name: Install shared dependencies
-      run: cd shared && npm ci
-      shell: bash
-      continue-on-error: true
 
     - name: Build shared types
       if: ${{ inputs.skip-shared-build != 'true' }}

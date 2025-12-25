@@ -19,15 +19,15 @@ jobs:
 
       - name: Run backend tests
         run: cd backend && npm test -- --coverage --ci
-        continue-on-error: false
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
-        if: always()
+        if: success()
         with:
           files: backend/coverage/lcov.info
           flags: backend
           fail_ci_if_error: false
+        continue-on-error: true
 
   # Frontend unit tests
   frontend-unit:
@@ -41,15 +41,15 @@ jobs:
 
       - name: Run frontend tests
         run: cd frontend && npm test -- --coverage
-        continue-on-error: false
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
-        if: always()
+        if: success()
         with:
           files: frontend/coverage/lcov.info
           flags: frontend
           fail_ci_if_error: false
+        continue-on-error: true
 
   # Type checking
   type-check:
@@ -63,29 +63,9 @@ jobs:
 
       - name: Type check frontend
         run: cd frontend && npm run type-check
-        continue-on-error: true
 
       - name: Type check backend
         run: cd backend && npx tsc --noEmit
-        continue-on-error: true
-
-  # Linting
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js workspace
-        uses: ./.github/actions/setup-node-workspace
-
-      - name: Lint frontend
-        run: cd frontend && npm run lint
-        continue-on-error: true
-
-      - name: Lint backend
-        run: cd backend && npm run lint
-        continue-on-error: true
 
   # E2E tests (only on master)
   e2e:
@@ -141,20 +121,25 @@ jobs:
   # Summary job
   test-summary:
     name: Test Summary
-    needs: [backend-unit, frontend-unit, type-check, lint]
+    needs: [backend-unit, frontend-unit, type-check]
     runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Check test results
         run: |
-          echo "Backend Tests: ${{ needs.backend-unit.result }}"
-          echo "Frontend Tests: ${{ needs.frontend-unit.result }}"
-          echo "Type Check: ${{ needs.type-check.result }}"
-          echo "Lint: ${{ needs.lint.result }}"
+          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend Tests | ${{ needs.backend-unit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend Tests | ${{ needs.frontend-unit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Type Check | ${{ needs.type-check.result }} |" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ needs.backend-unit.result }}" = "failure" ] || [ "${{ needs.frontend-unit.result }}" = "failure" ]; then
-            echo "::error::Some tests failed!"
+          if [ "${{ needs.backend-unit.result }}" = "failure" ] || [ "${{ needs.frontend-unit.result }}" = "failure" ] || [ "${{ needs.type-check.result }}" = "failure" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ Some tests failed!" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
-          echo "All required tests passed!"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
