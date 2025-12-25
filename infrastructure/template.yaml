@@ -14,6 +14,12 @@ Globals:
         DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucket
         SNS_TOPIC_ARN: !Ref NotificationTopic
         BEDROCK_MODEL_ID: anthropic.claude-3-haiku-20240307-v1:0  # Cost-optimized for text generation (Titan is for embeddings)
+        # RAG Enhancement: S3 Vectors + Bedrock Knowledge Base (Phase 2-3)
+        USE_S3_VECTORS: 'true'  # Enabled after successful migration (79 vectors)
+        USE_KNOWLEDGE_BASE: 'false'  # Set to 'true' after KB setup
+        S3_VECTORS_BUCKET: 'eecar-vectors-index-12234628'  # Created in console
+        S3_VECTORS_INDEX: 'parts-vectors'
+        KNOWLEDGE_BASE_ID: ''  # Add KB ID after creation in console
   Api:
     Cors:
       AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
@@ -48,7 +54,9 @@ Resources:
     Properties:
       CodeUri: ../backend/dist/functions/vector-search/
       Handler: index.handler
-      Description: AI-powered vector search for parts matching
+      Description: AI-powered vector search with RAG enhancements (Query Expansion, Hybrid Search, Re-ranking)
+      MemorySize: 1024  # Increased for advanced RAG processing
+      Timeout: 60  # Longer timeout for multi-step RAG pipeline
       Layers:
         - !Ref EECARUtilsLayer
       Policies:
@@ -62,6 +70,23 @@ Resources:
                 - bedrock:InvokeModel
                 - bedrock:InvokeModelWithResponseStream
               Resource: 'arn:aws:bedrock:ap-northeast-2::foundation-model/*'
+            # S3 Vectors permissions (Phase 2)
+            # ARN format: arn:aws:s3vectors:region:account:bucket/bucket-name/index/index-name
+            - Effect: Allow
+              Action:
+                - s3vectors:QueryVectors
+                - s3vectors:GetVectors
+                - s3vectors:ListIndexes
+                - s3vectors:GetIndex
+              Resource:
+                - 'arn:aws:s3vectors:ap-northeast-2:425454508084:bucket/eecar-vectors-index-12234628'
+                - 'arn:aws:s3vectors:ap-northeast-2:425454508084:bucket/eecar-vectors-index-12234628/index/parts-vectors'
+            # Bedrock Knowledge Base permissions (Phase 3)
+            - Effect: Allow
+              Action:
+                - bedrock:Retrieve
+                - bedrock:RetrieveAndGenerate
+              Resource: !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/*'
       Events:
         Search:
           Type: Api
