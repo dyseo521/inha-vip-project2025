@@ -38,6 +38,8 @@ samconfig.toml
 docs/IAM_POLICY_*.json
 docs/DEPLOYMENT.md
 DEPLOY_LOCAL.md
+docs/RESUME_TECHNICAL_SUMMARY.md
+docs/RESUME_PROJECT_HIGHLIGHTS.md
 
 # Test coverage
 coverage/
