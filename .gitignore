@@ -49,6 +49,7 @@ tmp/
 temp/
 
 data/
+!backend/src/functions/synthetic-data/data/
 
 # Project documentation
 CLAUDE.md
