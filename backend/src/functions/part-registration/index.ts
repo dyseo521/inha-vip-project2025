@@ -8,6 +8,53 @@ import { successResponse, errorResponse } from '/opt/nodejs/utils/response.js';
 
 const lambdaClient = new LambdaClient({});
 
+// S3 Vectors configuration
+const USE_S3_VECTORS = process.env.USE_S3_VECTORS === 'true';
+const S3_VECTORS_BUCKET = process.env.S3_VECTORS_BUCKET || '';
+const S3_VECTORS_INDEX = process.env.S3_VECTORS_INDEX || 'parts-vectors';
+
+/**
+ * Upload vector to S3 Vectors index for server-side similarity search
+ */
+async function uploadToS3Vectors(
+  partId: string,
+  embedding: number[],
+  metadata: {
+    name: string;
+    category: string;
+    manufacturer: string;
+    price: number;
+    condition?: string;
+  }
+): Promise<void> {
+  // Dynamic import for S3 Vectors client
+  const { S3VectorsClient, PutVectorsCommand } = await import('@aws-sdk/client-s3vectors');
+
+  const client = new S3VectorsClient({ region: 'ap-northeast-2' });
+
+  await client.send(
+    new PutVectorsCommand({
+      vectorBucketName: S3_VECTORS_BUCKET,
+      indexName: S3_VECTORS_INDEX,
+      vectors: [{
+        key: partId,
+        data: {
+          float32: embedding,
+        },
+        metadata: {
+          name: metadata.name,
+          category: metadata.category,
+          manufacturer: metadata.manufacturer,
+          price: String(metadata.price),
+          condition: metadata.condition || 'used',
+        },
+      }],
+    })
+  );
+
+  console.log(`Vector uploaded to S3 Vectors: ${partId}`);
+}
+
 /**
  * Part Registration Lambda Function
  * Register new parts, generate embeddings, and invoke compliance check
@@ -106,11 +153,27 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const embedding = await generateEmbedding(partText);
 
-    // Step 5: Upload vector to S3
+    // Step 5: Upload vector to S3 (legacy JSON format for rollback)
     const vectorKey = `parts/${partId}.json`;
     await uploadVector(vectorKey, embedding);
     await updateVectorsManifest([vectorKey]);
-    console.log('Vector uploaded to S3');
+    console.log('Vector uploaded to S3 (JSON)');
+
+    // Step 5.1: Upload to S3 Vectors (if enabled)
+    if (USE_S3_VECTORS && S3_VECTORS_BUCKET) {
+      try {
+        await uploadToS3Vectors(partId, embedding, {
+          name,
+          category,
+          manufacturer,
+          price,
+          condition,
+        });
+      } catch (error) {
+        console.error('Failed to upload to S3 Vectors:', error);
+        // Don't fail registration if S3 Vectors upload fails
+      }
+    }
 
     // Step 6: Store vector reference
     await putItem({
