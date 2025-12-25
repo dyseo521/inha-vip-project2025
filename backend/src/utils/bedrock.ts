@@ -129,25 +129,138 @@ export function findTopKSimilar(
 }
 
 /**
+ * Category Korean names mapping
+ */
+const CATEGORY_KOREAN: Record<string, string> = {
+  'battery': '배터리',
+  'motor': '모터',
+  'inverter': '인버터',
+  'body-chassis-frame': '차체 프레임',
+  'body-panel': '바디 패널',
+  'body-door': '도어',
+  'body-window': '창문/유리',
+};
+
+/**
+ * Generate relevant keywords from part data
+ */
+function generateKeywords(part: any): string[] {
+  const keywords: string[] = [];
+
+  // Category-based keywords
+  if (part.category?.includes('battery')) {
+    keywords.push('배터리', '리튬이온', '에너지 저장', 'BMS', '셀');
+  } else if (part.category?.includes('motor')) {
+    keywords.push('모터', '구동', '전동기', 'PMSM', '토크');
+  } else if (part.category?.includes('inverter')) {
+    keywords.push('인버터', 'DC-AC', '전력변환', 'IGBT', '컨버터');
+  } else if (part.category?.includes('body')) {
+    keywords.push('바디', '외장', '차체', '알루미늄', '패널');
+  }
+
+  // Manufacturer keywords
+  if (part.manufacturer) {
+    keywords.push(part.manufacturer);
+    if (part.manufacturer.includes('현대')) keywords.push('현대차그룹');
+    if (part.manufacturer.includes('LG')) keywords.push('LG에너지솔루션');
+    if (part.manufacturer.includes('삼성')) keywords.push('삼성SDI');
+  }
+
+  // Condition-based keywords
+  if (part.condition === 'excellent') {
+    keywords.push('최상급', '프리미엄');
+  } else if (part.condition === 'good') {
+    keywords.push('양호', '중고');
+  }
+
+  return [...new Set(keywords)];
+}
+
+/**
+ * Format material composition for embedding
+ */
+function formatMaterial(material: any): string {
+  if (!material) return '';
+
+  const parts: string[] = [];
+  if (material.primary) parts.push(material.primary);
+  if (material.alloyNumber) parts.push(`합금 ${material.alloyNumber}`);
+  if (material.tensileStrength) parts.push(`인장강도 ${material.tensileStrength}MPa`);
+  if (material.recyclability) parts.push(`재활용률 ${material.recyclability}%`);
+
+  return parts.join(', ');
+}
+
+/**
  * Prepare text for embedding (combine part information)
+ * Enhanced version with structured sections and keywords for better RAG performance
  */
 export function preparePartText(part: any): string {
-  const sections = [
-    `부품명: ${part.name}`,
-    `카테고리: ${part.category}`,
-    `제조사: ${part.manufacturer}`,
-    `모델: ${part.model}`,
-    `설명: ${part.description || '없음'}`,
-  ];
+  const sections: string[] = [];
 
+  // Header section
+  sections.push('[부품정보]');
+  sections.push(`부품명: ${part.name}`);
+  sections.push(`카테고리: ${part.category} - ${CATEGORY_KOREAN[part.category] || part.category}`);
+  sections.push(`제조사: ${part.manufacturer}`);
+  sections.push(`모델: ${part.model}`);
+
+  // Battery-specific section
+  if (part.batteryHealth) {
+    sections.push('[배터리 상태]');
+    sections.push(`SOH: ${part.batteryHealth.soh}%`);
+    if (part.batteryHealth.cathodeType) {
+      sections.push(`양극재: ${part.batteryHealth.cathodeType}`);
+    }
+    if (part.batteryHealth.cycles) {
+      sections.push(`충방전 횟수: ${part.batteryHealth.cycles}회`);
+    }
+    if (part.batteryHealth.predictedRange) {
+      sections.push(`예상 주행거리: ${part.batteryHealth.predictedRange}km`);
+    }
+    // Add reuse recommendation
+    if (part.batteryHealth.soh >= 70) {
+      sections.push('권장용도: 전기차 재사용 가능');
+    } else {
+      sections.push('권장용도: ESS 전환 또는 재활용 권장');
+    }
+  }
+
+  // Specifications section
   if (part.specifications) {
     const spec = part.specifications;
-    sections.push(`소재: ${spec.materialComposition?.primary || '미상'}`);
-    if (spec.electricalProps) {
-      sections.push(
-        `전기적 특성: 전압 ${spec.electricalProps.voltage}V, 용량 ${spec.electricalProps.capacity}Ah`
-      );
+
+    if (spec.materialComposition) {
+      sections.push('[재질]');
+      sections.push(formatMaterial(spec.materialComposition));
     }
+
+    if (spec.electricalProps) {
+      sections.push('[전기적 특성]');
+      sections.push(`전압: ${spec.electricalProps.voltage}V`);
+      sections.push(`용량: ${spec.electricalProps.capacity}Ah`);
+      if (spec.electricalProps.power) {
+        sections.push(`출력: ${spec.electricalProps.power}kW`);
+      }
+    }
+
+    if (spec.dimensions) {
+      sections.push('[치수]');
+      const dim = spec.dimensions;
+      sections.push(`크기: ${dim.length || 0}x${dim.width || 0}x${dim.height || 0}mm`);
+      if (dim.weight) sections.push(`중량: ${dim.weight}kg`);
+    }
+  }
+
+  // Description section
+  sections.push('[설명]');
+  sections.push(part.description || '상세 설명 없음');
+
+  // Keywords section for improved recall
+  const keywords = generateKeywords(part);
+  if (keywords.length > 0) {
+    sections.push('[키워드]');
+    sections.push(keywords.join(', '));
   }
 
   return sections.join('\n');
