@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EECAR API Documentation</title>
+  <meta name="description" content="EECAR - 1세대 전기차 중고 부품 거래 플랫폼 API 문서">
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    .swagger-ui .topbar {
+      display: none;
+    }
+    .custom-header {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+      color: white;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .custom-header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .custom-header p {
+      margin: 4px 0 0 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    .header-logo {
+      font-size: 40px;
+    }
+    .header-links {
+      margin-left: auto;
+      display: flex;
+      gap: 16px;
+    }
+    .header-links a {
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .header-links a:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .swagger-ui .info {
+      margin: 20px 0;
+    }
+    .swagger-ui .info .title {
+      font-size: 28px;
+    }
+  </style>
+</head>
+<body>
+  <div class="custom-header">
+    <span class="header-logo">🚗⚡</span>
+    <div>
+      <h1>EECAR API Documentation</h1>
+      <p>1세대 전기차 중고 부품 거래 플랫폼</p>
+    </div>
+    <div class="header-links">
+      <a href="https://github.com/dyseo521/inha-vip-project2025" target="_blank">GitHub</a>
+    </div>
+  </div>
+
+  <div id="swagger-ui"></div>
+
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function() {
+      SwaggerUIBundle({
+        url: './openapi.yaml',
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: 'StandaloneLayout',
+        defaultModelsExpandDepth: 1,
+        defaultModelExpandDepth: 2,
+        docExpansion: 'list',
+        filter: true,
+        showExtensions: true,
+        showCommonExtensions: true,
+        tryItOutEnabled: true
+      });
+    };
+  </script>
+</body>
+</html>
