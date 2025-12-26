@@ -1,7 +1,8 @@
 openapi: 3.0.3
 info:
   title: EECAR API
-  description: |
+  version: 1.0.0
+  description: |-
     EECAR - 1세대 전기차 중고 부품 거래 플랫폼 API
 
     ## 주요 기능
@@ -10,18 +11,21 @@ info:
     - **배터리 건강도**: SOH 기반 재사용/재활용 판단
     - **소재 특성**: 알루미늄 합금 등 소재 기반 검색
     - **B2B 거래**: 제안서 생성 및 관리
-  version: 1.0.0
+
+    ## 기술 스택
+    - AWS Lambda (Node.js 20)
+    - DynamoDB (Single-Table Design)
+    - Amazon Bedrock (Claude, Titan Embeddings)
+    - S3 Vectors
   contact:
     name: EECAR Team
   license:
     name: MIT
-
 servers:
   - url: https://6o4futufni.execute-api.ap-northeast-2.amazonaws.com/prod
     description: Production (AWS API Gateway)
   - url: http://localhost:3001
     description: Local Development
-
 tags:
   - name: Search
     description: AI 기반 검색 API
@@ -39,523 +43,11 @@ tags:
     description: 문의 API
   - name: Synthetic
     description: 테스트 데이터 생성 API
-
-paths:
-  /api/search:
-    post:
-      summary: AI RAG 검색
-      description: |
-        Amazon Bedrock 기반 RAG(Retrieval-Augmented Generation) 검색
-        - 쿼리 확장 (언어적 변형)
-        - 하이브리드 스코어링 (70% 벡터 + 30% BM25)
-        - S3 Vectors 벡터 유사도 검색
-        - 결과 캐싱 (7일 TTL)
-      tags: [Search]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SearchRequest'
-            example:
-              query: "테슬라 모델3 배터리 80% 이상"
-              filters:
-                category: battery
-                maxPrice: 5000000
-              topK: 10
-      responses:
-        '200':
-          description: 검색 결과
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchResponse'
-              example:
-                results:
-                  - partId: "battery-001"
-                    score: 0.95
-                    part:
-                      name: "Tesla Model 3 Battery Pack"
-                      price: 4500000
-                      condition: "used"
-                    reason: "배터리 SOH 85%로 재사용 적합, 테슬라 모델3 호환"
-                cached: false
-                count: 5
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /api/parts:
-    get:
-      summary: 부품 목록 조회
-      description: |
-        커서 기반 페이지네이션으로 부품 목록 조회
-        - 카테고리별 필터링 지원
-        - 최신순 정렬
-      tags: [Parts]
-      parameters:
-        - name: category
-          in: query
-          description: 부품 카테고리 (미지정 시 전체)
-          schema:
-            $ref: '#/components/schemas/PartCategory'
-        - name: limit
-          in: query
-          description: 조회 개수 (기본값 20, 최대 100)
-          schema:
-            type: integer
-            default: 20
-            minimum: 1
-            maximum: 100
-        - name: cursor
-          in: query
-          description: 페이지네이션 커서 (이전 응답의 nextCursor)
-          schema:
-            type: string
-      responses:
-        '200':
-          description: 부품 목록
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PartsListResponse'
-              example:
-                parts:
-                  - partId: "battery-001"
-                    name: "Tesla Model 3 Battery Pack"
-                    category: "battery"
-                    price: 4500000
-                    condition: "used"
-                count: 20
-                nextCursor: "eyJQSyI6IlBBUlQjYmF0dGVyeS0wMDEifQ=="
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-    post:
-      summary: 부품 등록
-      description: |
-        새 부품 등록
-        - Titan Embeddings로 자동 임베딩 생성
-        - S3에 벡터 저장
-        - 비동기 규정 검사 트리거
-      tags: [Parts]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PartRegistrationRequest'
-            example:
-              name: "현대 아이오닉5 배터리 모듈"
-              category: "battery"
-              manufacturer: "SK On"
-              model: "E-GMP Battery Module"
-              year: 2023
-              condition: "used"
-              price: 3500000
-              quantity: 5
-              sellerId: "seller-123"
-              description: "아이오닉5에서 탈거한 배터리 모듈, SOH 88%"
-              images: ["https://example.com/img1.jpg"]
-              batteryHealth:
-                soh: 88
-                cathodeType: "NCM Ni 80%"
-                manufacturer: "SK On"
-                model: "NCM811"
-                year: 2023
-                recommendedUse: "reuse"
-      responses:
-        '201':
-          description: 등록 완료
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  partId:
-                    type: string
-              example:
-                message: "부품이 성공적으로 등록되었습니다"
-                partId: "battery-abc123"
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /api/parts/{id}:
-    get:
-      summary: 단일 부품 조회
-      description: 부품 ID로 상세 정보 조회 (메타데이터, 스펙, 사용사례 포함)
-      tags: [Parts]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: 부품 ID
-          schema:
-            type: string
-          example: "battery-001"
-      responses:
-        '200':
-          description: 부품 상세 정보
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Part'
-        '404':
-          description: 부품을 찾을 수 없음
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "부품을 찾을 수 없습니다"
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /api/battery-health:
-    post:
-      summary: 배터리 건강도 기반 검색
-      description: |
-        배터리 SOH(State of Health) 기반 고급 검색
-        - 재사용/재활용/폐기 판단
-        - 양극재 타입별 필터링
-        - 적합 용도 추천 (ESS, 전동킥보드 등)
-      tags: [Battery]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BatteryHealthRequest'
-            example:
-              batteryFilters:
-                soh:
-                  min: 70
-                  max: 90
-                cathodeType: ["NCM Ni 80%", "NCA"]
-                recommendedUse: ["reuse"]
-              topK: 10
-      responses:
-        '200':
-          description: 배터리 검색 결과
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BatteryHealthResponse'
-              example:
-                results:
-                  - partId: "battery-002"
-                    score: 0.92
-                    part:
-                      name: "Tesla Model S Battery Module"
-                      batteryHealth:
-                        soh: 82
-                        cathodeType: "NCA"
-                        recommendedUse: "reuse"
-                    reason: "SOH 82%로 ESS 용도 적합"
-                count: 5
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /api/material-search:
-    post:
-      summary: 소재 특성 기반 검색
-      description: |
-        알루미늄 합금 등 소재 물성 기반 검색
-        - 인장강도, 항복강도, 탄성계수 범위 필터
-        - 합금 번호 (6061, 7075 등) 검색
-        - 재활용률 필터링
-      tags: [Material]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MaterialSearchRequest'
-            example:
-              materialFilters:
-                alloyNumber: "6061"
-                tensileStrengthMPa:
-                  min: 250
-                  max: 350
-                recyclability:
-                  min: 90
-              category: "body-panel"
-              topK: 10
-      responses:
-        '200':
-          description: 소재 검색 결과
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SearchResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /api/watch:
-    post:
-      summary: 알림 등록
-      description: |
-        원하는 부품 조건에 대한 알림 등록
-        - 조건 매칭 시 SNS로 알림 발송
-        - 이메일/전화번호로 알림 수신
-      tags: [Watch]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/WatchRequest'
-            example:
-              buyerId: "buyer-123"
-              email: "buyer@example.com"
-              criteria:
-                category: "battery"
-                maxPrice: 3000000
-                keywords: ["테슬라", "모델3"]
-      responses:
-        '201':
-          description: 알림 등록 완료
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  watchId:
-                    type: string
-              example:
-                message: "알림이 등록되었습니다"
-                watchId: "watch-xyz789"
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /api/proposals:
-    post:
-      summary: 거래 제안 생성
-      description: B2B 거래 제안서 생성
-      tags: [Proposals]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProposalRequest'
-            example:
-              fromCompanyId: "company-A"
-              toCompanyId: "company-B"
-              partIds: ["battery-001", "battery-002"]
-              proposalType: "buy"
-              message: "배터리 대량 구매 희망합니다"
-              quantity: 10
-              priceOffer: 40000000
-              terms:
-                deliveryDate: "2024-02-01"
-                paymentTerms: "선금 30%, 잔금 70%"
-      responses:
-        '201':
-          description: 제안 생성 완료
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  proposalId:
-                    type: string
-              example:
-                message: "제안이 생성되었습니다"
-                proposalId: "proposal-abc123"
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-    get:
-      summary: 거래 제안 조회
-      description: 회사별 거래 제안 목록 조회
-      tags: [Proposals]
-      parameters:
-        - name: companyId
-          in: query
-          required: true
-          description: 조회할 회사 ID
-          schema:
-            type: string
-        - name: status
-          in: query
-          description: 제안 상태 필터
-          schema:
-            $ref: '#/components/schemas/ProposalStatus'
-      responses:
-        '200':
-          description: 제안 목록
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  proposals:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Proposal'
-                  count:
-                    type: integer
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /api/contact:
-    post:
-      summary: 문의 접수
-      description: 일반 문의 접수 (SNS로 알림 발송)
-      tags: [Contact]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ContactRequest'
-            example:
-              name: "홍길동"
-              email: "hong@example.com"
-              subject: "대량 구매 문의"
-              message: "배터리 100개 구매 가능할까요?"
-              partId: "battery-001"
-      responses:
-        '200':
-          description: 문의 접수 완료
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  success:
-                    type: boolean
-              example:
-                message: "문의가 성공적으로 접수되었습니다"
-                success: true
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /api/synthetic:
-    post:
-      summary: 합성 데이터 생성
-      description: |
-        테스트용 합성 부품 데이터 생성
-        - 카테고리별 현실적인 가격 범위 적용
-        - 배터리의 경우 SOH, 양극재 타입 등 자동 생성
-      tags: [Synthetic]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SyntheticDataRequest'
-            example:
-              category: "battery"
-              count: 10
-      responses:
-        '200':
-          description: 생성 완료
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SyntheticDataResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
 components:
   schemas:
-    # ==================== Part Schemas ====================
-    Part:
-      type: object
-      required:
-        - partId
-        - name
-        - category
-        - manufacturer
-        - model
-        - year
-        - condition
-        - price
-        - quantity
-        - sellerId
-        - description
-      properties:
-        partId:
-          type: string
-          description: 부품 고유 ID
-        name:
-          type: string
-          description: 부품명
-        category:
-          $ref: '#/components/schemas/PartCategory'
-        manufacturer:
-          type: string
-          description: 제조사
-        model:
-          type: string
-          description: 모델명
-        year:
-          type: integer
-          description: 제조년도
-        condition:
-          $ref: '#/components/schemas/PartCondition'
-        price:
-          type: number
-          description: 가격 (원)
-        quantity:
-          type: integer
-          description: 수량
-        sellerId:
-          type: string
-          description: 판매자 ID
-        description:
-          type: string
-          description: 상세 설명
-        images:
-          type: array
-          items:
-            type: string
-          description: 이미지 URL 목록
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        specifications:
-          $ref: '#/components/schemas/PartSpecifications'
-        useCases:
-          type: array
-          items:
-            $ref: '#/components/schemas/UseCase'
-        batteryHealth:
-          $ref: '#/components/schemas/BatteryHealthInfo'
-
     PartCategory:
       type: string
-      enum:
+      enum: &a2
         - battery
         - motor
         - inverter
@@ -567,49 +59,35 @@ components:
         - body-window
         - interior
         - other
-      description: |
-        부품 카테고리
-        - battery: 배터리
-        - motor: 모터
-        - inverter: 인버터
-        - charger: 충전기
-        - electronics: 전자부품
-        - body-chassis-frame: 샤시/프레임
-        - body-panel: 외판/패널
-        - body-door: 도어
-        - body-window: 유리/창문
-        - interior: 내장재
-        - other: 기타
-
+      description: 부품 카테고리
+      example: battery
     PartCondition:
       type: string
-      enum: [new, used, refurbished, for-parts]
-      description: |
-        부품 상태
-        - new: 신품
-        - used: 중고
-        - refurbished: 리퍼
-        - for-parts: 부품용
-
-    PartSpecifications:
-      type: object
-      properties:
-        materialComposition:
-          $ref: '#/components/schemas/MaterialComposition'
-        dimensions:
-          $ref: '#/components/schemas/Dimensions'
-        weight:
-          type: number
-          description: 무게 (kg)
-        electricalProps:
-          $ref: '#/components/schemas/ElectricalProperties'
-
+      enum: &a3
+        - new
+        - used
+        - refurbished
+        - for-parts
+      description: 부품 상태
+      example: used
+    CathodeType:
+      type: string
+      enum: &a1
+        - NCM Ni 33%
+        - NCM Ni 60%
+        - NCM Ni 80%
+        - NCA
+        - LMO
+        - LFP
+        - Other
+      description: 양극재 타입
+      example: NCM Ni 80%
     MaterialComposition:
       type: object
       properties:
         primary:
           type: string
-          description: 주요 소재 (Aluminum, CFRP 등)
+          example: Aluminum
         secondary:
           type: array
           items:
@@ -627,28 +105,54 @@ components:
         elasticModulusGPa:
           type: number
           description: 탄성계수 (GPa)
+        elongationPercent:
+          type: number
+          description: 연신율 (%)
+        hardness:
+          type: string
+        density:
+          type: number
+          description: 밀도 (g/cm³)
+        meltingPoint:
+          type: number
+          description: 녹는점 (°C)
         alloyNumber:
           type: string
-          description: 합금 번호 (6061, 7075 등)
+          description: 합금 번호
+          example: "6061"
         recyclability:
           type: number
-          description: 재활용률 (0-100%)
           minimum: 0
           maximum: 100
-
+          description: 재활용률 (0-100%)
+      required:
+        - primary
     Dimensions:
       type: object
       properties:
         length:
           type: number
+          minimum: 0
+          exclusiveMinimum: true
         width:
           type: number
+          minimum: 0
+          exclusiveMinimum: true
         height:
           type: number
+          minimum: 0
+          exclusiveMinimum: true
         unit:
           type: string
-          enum: [mm, cm, m]
-
+          enum:
+            - mm
+            - cm
+            - m
+      required:
+        - length
+        - width
+        - height
+        - unit
     ElectricalProperties:
       type: object
       properties:
@@ -661,10 +165,118 @@ components:
         power:
           type: number
           description: 출력 (W)
-
-    # ==================== Battery Schemas ====================
+        current:
+          type: number
+          description: 전류 (A)
+        resistance:
+          type: number
+          description: 저항 (Ω)
+    PartSpecifications:
+      type: object
+      properties:
+        materialComposition:
+          $ref: "#/components/schemas/MaterialComposition"
+        dimensions:
+          $ref: "#/components/schemas/Dimensions"
+        weight:
+          type: number
+          description: 무게 (kg)
+        electricalProps:
+          $ref: "#/components/schemas/ElectricalProperties"
+        chemicalProps:
+          type: object
+          additionalProperties:
+            nullable: true
+        thermalProps:
+          type: object
+          additionalProperties:
+            nullable: true
+        recyclingInfo:
+          type: object
+          additionalProperties:
+            nullable: true
+    UseCase:
+      type: object
+      properties:
+        industry:
+          type: string
+        application:
+          type: string
+        requirements:
+          type: object
+          additionalProperties:
+            nullable: true
+        successCase:
+          type: boolean
+        description:
+          type: string
+      required:
+        - industry
+        - application
+        - description
     BatteryHealthInfo:
       type: object
+      properties:
+        soh:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: State of Health (%)
+          example: 85
+        soc:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: State of Charge (%)
+        cycleCount:
+          type: integer
+          minimum: 0
+        estimatedMileageKm:
+          type: number
+          description: 예상 잔여 주행거리 (km)
+        cathodeType:
+          type: string
+          enum: *a1
+          description: 양극재 타입
+          example: NCM Ni 80%
+        manufacturer:
+          type: string
+        model:
+          type: string
+        year:
+          type: integer
+          minimum: 2010
+          maximum: 2030
+        recommendedUse:
+          type: string
+          enum:
+            - reuse
+            - recycle
+            - dispose
+          description: "권장 용도: reuse(SOH>=70%), recycle(30-70%), dispose(<30%)"
+        suitableApplications:
+          type: array
+          items:
+            type: string
+          description: 적합 용도 (ESS, 전동킥보드 등)
+        degradationRate:
+          type: number
+          description: 연간 열화율 (%)
+        recyclingMethod:
+          type: array
+          items:
+            type: string
+            enum:
+              - wet_metallurgy
+              - dry_smelting
+              - direct_recycling
+              - mechanical_separation
+              - thermal_treatment
+            description: 재활용 방법
+        vendorRecommendations:
+          type: array
+          items:
+            type: string
       required:
         - soh
         - cathodeType
@@ -672,189 +284,73 @@ components:
         - model
         - year
         - recommendedUse
-      properties:
-        soh:
-          type: number
-          description: State of Health (%)
-          minimum: 0
-          maximum: 100
-        soc:
-          type: number
-          description: State of Charge (%)
-        cycleCount:
-          type: integer
-          description: 충방전 횟수
-        estimatedMileageKm:
-          type: number
-          description: 예상 잔여 주행거리 (km)
-        cathodeType:
-          $ref: '#/components/schemas/CathodeType'
-        manufacturer:
-          type: string
-        model:
-          type: string
-        year:
-          type: integer
-        recommendedUse:
-          type: string
-          enum: [reuse, recycle, dispose]
-          description: |
-            권장 용도
-            - reuse: 재사용 (SOH >= 70%)
-            - recycle: 재활용 (SOH 30-70%)
-            - dispose: 폐기 (SOH < 30%)
-        suitableApplications:
-          type: array
-          items:
-            type: string
-          description: 적합 용도 (ESS, 전동킥보드 등)
-
-    CathodeType:
-      type: string
-      enum:
-        - NCM Ni 33%
-        - NCM Ni 60%
-        - NCM Ni 80%
-        - NCA
-        - LMO
-        - LFP
-        - Other
-      description: 양극재 타입
-
-    UseCase:
-      type: object
-      properties:
-        industry:
-          type: string
-          description: 산업 분야
-        application:
-          type: string
-          description: 적용 분야
-        description:
-          type: string
-
-    # ==================== Search Schemas ====================
-    SearchRequest:
-      type: object
-      required:
-        - query
-      properties:
-        query:
-          type: string
-          description: 검색 쿼리
-          minLength: 1
-        filters:
-          $ref: '#/components/schemas/SearchFilters'
-        topK:
-          type: integer
-          description: 반환할 결과 수
-          default: 10
-          minimum: 1
-          maximum: 50
-
-    SearchFilters:
-      type: object
-      properties:
-        category:
-          $ref: '#/components/schemas/PartCategory'
-        manufacturer:
-          type: string
-        maxPrice:
-          type: number
-        minQuantity:
-          type: integer
-        yearRange:
-          type: array
-          items:
-            type: integer
-          minItems: 2
-          maxItems: 2
-        condition:
-          type: array
-          items:
-            $ref: '#/components/schemas/PartCondition'
-        materialFilters:
-          $ref: '#/components/schemas/AdvancedMaterialFilters'
-        batteryFilters:
-          $ref: '#/components/schemas/BatteryFilters'
-
-    AdvancedMaterialFilters:
-      type: object
-      properties:
-        tensileStrengthMPa:
-          $ref: '#/components/schemas/RangeFilter'
-        yieldStrengthMPa:
-          $ref: '#/components/schemas/RangeFilter'
-        elasticModulusGPa:
-          $ref: '#/components/schemas/RangeFilter'
-        alloyNumber:
-          type: string
-        recyclability:
-          type: object
-          properties:
-            min:
-              type: number
-
-    BatteryFilters:
-      type: object
-      properties:
-        soh:
-          $ref: '#/components/schemas/RangeFilter'
-        cathodeType:
-          type: array
-          items:
-            $ref: '#/components/schemas/CathodeType'
-        recommendedUse:
-          type: array
-          items:
-            type: string
-            enum: [reuse, recycle, dispose]
-        suitableApplications:
-          type: array
-          items:
-            type: string
-        estimatedMileageKm:
-          $ref: '#/components/schemas/RangeFilter'
-
-    RangeFilter:
-      type: object
-      properties:
-        min:
-          type: number
-        max:
-          type: number
-
-    SearchResponse:
-      type: object
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/SearchResult'
-        cached:
-          type: boolean
-          description: 캐시된 결과 여부
-        count:
-          type: integer
-
-    SearchResult:
+    Part:
       type: object
       properties:
         partId:
           type: string
-        score:
-          type: number
-          description: 유사도 점수 (0-1)
-        part:
-          $ref: '#/components/schemas/Part'
-        reason:
+          example: battery-001
+        name:
           type: string
-          description: Claude가 생성한 매칭 이유
-
-    # ==================== Request Schemas ====================
-    PartRegistrationRequest:
-      type: object
+          minLength: 1
+          example: Tesla Model 3 Battery Pack
+        category:
+          type: string
+          enum: *a2
+          description: 부품 카테고리
+          example: battery
+        manufacturer:
+          type: string
+          example: Tesla
+        model:
+          type: string
+          example: Model 3 LR
+        year:
+          type: integer
+          minimum: 2010
+          maximum: 2030
+          example: 2023
+        condition:
+          type: string
+          enum: *a3
+          description: 부품 상태
+          example: used
+        price:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          example: 4500000
+        quantity:
+          type: integer
+          minimum: 0
+          exclusiveMinimum: true
+          example: 1
+        sellerId:
+          type: string
+        description:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          default: &a5 []
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        specifications:
+          $ref: "#/components/schemas/PartSpecifications"
+        useCases:
+          type: array
+          items:
+            $ref: "#/components/schemas/UseCase"
+        batteryHealth:
+          $ref: "#/components/schemas/BatteryHealthInfo"
       required:
+        - partId
         - name
         - category
         - manufacturer
@@ -865,137 +361,120 @@ components:
         - quantity
         - sellerId
         - description
+    RangeFilter:
+      type: object
       properties:
-        name:
-          type: string
-        category:
-          $ref: '#/components/schemas/PartCategory'
-        manufacturer:
-          type: string
-        model:
-          type: string
-        year:
-          type: integer
-        condition:
-          $ref: '#/components/schemas/PartCondition'
-        price:
+        min:
           type: number
-        quantity:
-          type: integer
-        sellerId:
+        max:
+          type: number
+    AdvancedMaterialFilters:
+      type: object
+      properties:
+        tensileStrengthMPa:
+          $ref: "#/components/schemas/RangeFilter"
+        yieldStrengthMPa:
+          $ref: "#/components/schemas/RangeFilter"
+        elasticModulusGPa:
+          $ref: "#/components/schemas/RangeFilter"
+        elongationPercent:
+          $ref: "#/components/schemas/RangeFilter"
+        purity:
+          type: object
+          properties:
+            min:
+              type: number
+        alloyNumber:
           type: string
-        description:
-          type: string
-        images:
+          example: "6061"
+        composition:
+          type: array
+          items:
+            type: object
+            properties:
+              element:
+                type: string
+              percentage:
+                $ref: "#/components/schemas/RangeFilter"
+            required:
+              - element
+        recyclability:
+          type: object
+          properties:
+            min:
+              type: number
+    BatteryFilters:
+      type: object
+      properties:
+        soh:
+          $ref: "#/components/schemas/RangeFilter"
+        cathodeType:
           type: array
           items:
             type: string
-        specifications:
-          $ref: '#/components/schemas/PartSpecifications'
-        batteryHealth:
-          $ref: '#/components/schemas/BatteryHealthInfo'
-
-    BatteryHealthRequest:
-      type: object
-      properties:
-        batteryFilters:
-          $ref: '#/components/schemas/BatteryFilters'
-        topK:
-          type: integer
-          default: 10
-
-    BatteryHealthResponse:
-      type: object
-      properties:
-        results:
+            enum: *a1
+            description: 양극재 타입
+            example: NCM Ni 80%
+        recommendedUse:
           type: array
           items:
-            $ref: '#/components/schemas/SearchResult'
-        count:
-          type: integer
-
-    MaterialSearchRequest:
-      type: object
-      properties:
-        materialFilters:
-          $ref: '#/components/schemas/AdvancedMaterialFilters'
-        category:
-          $ref: '#/components/schemas/PartCategory'
-        topK:
-          type: integer
-          default: 10
-
-    WatchRequest:
-      type: object
-      required:
-        - buyerId
-        - criteria
-      properties:
-        buyerId:
-          type: string
-        email:
-          type: string
-          format: email
-        phone:
-          type: string
-        criteria:
-          $ref: '#/components/schemas/WatchCriteria'
-
-    WatchCriteria:
+            type: string
+            enum:
+              - reuse
+              - recycle
+              - dispose
+        suitableApplications:
+          type: array
+          items:
+            type: string
+        estimatedMileageKm:
+          $ref: "#/components/schemas/RangeFilter"
+    SearchFilters:
       type: object
       properties:
         category:
-          $ref: '#/components/schemas/PartCategory'
+          type: string
+          enum: *a2
+          description: 부품 카테고리
+          example: battery
+        manufacturer:
+          type: string
         maxPrice:
           type: number
-        manufacturer:
-          type: string
-        keywords:
-          type: array
-          items:
-            type: string
-
-    ProposalRequest:
-      type: object
-      required:
-        - fromCompanyId
-        - toCompanyId
-        - partIds
-        - proposalType
-      properties:
-        fromCompanyId:
-          type: string
-        toCompanyId:
-          type: string
-        partIds:
-          type: array
-          items:
-            type: string
-        proposalType:
-          type: string
-          enum: [buy, sell]
-        message:
-          type: string
-        quantity:
+          minimum: 0
+          exclusiveMinimum: true
+        minQuantity:
           type: integer
-        priceOffer:
-          type: number
-        terms:
-          $ref: '#/components/schemas/ProposalTerms'
-
+          minimum: 0
+          exclusiveMinimum: true
+        yearRange:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+        condition:
+          type: array
+          items:
+            type: string
+            enum: *a3
+            description: 부품 상태
+            example: used
+        materialFilters:
+          $ref: "#/components/schemas/AdvancedMaterialFilters"
+        batteryFilters:
+          $ref: "#/components/schemas/BatteryFilters"
     ProposalTerms:
       type: object
       properties:
         deliveryDate:
           type: string
-          format: date
         paymentTerms:
           type: string
         warranty:
           type: string
         notes:
           type: string
-
     Proposal:
       type: object
       properties:
@@ -1011,7 +490,9 @@ components:
             type: string
         proposalType:
           type: string
-          enum: [buy, sell]
+          enum:
+            - buy
+            - sell
         message:
           type: string
         quantity:
@@ -1019,76 +500,40 @@ components:
         priceOffer:
           type: number
         terms:
-          $ref: '#/components/schemas/ProposalTerms'
+          $ref: "#/components/schemas/ProposalTerms"
         status:
-          $ref: '#/components/schemas/ProposalStatus'
+          type: string
+          enum: &a4
+            - pending
+            - accepted
+            - rejected
+            - negotiating
+            - cancelled
+          description: 제안 상태
+          example: pending
         createdAt:
           type: string
           format: date-time
-
+        respondedAt:
+          type: string
+          format: date-time
+      required:
+        - proposalId
+        - fromCompanyId
+        - toCompanyId
+        - partIds
+        - proposalType
+        - message
+        - quantity
+        - priceOffer
+        - terms
+        - status
+        - createdAt
     ProposalStatus:
       type: string
-      enum: [pending, accepted, rejected, negotiating, cancelled]
-
-    ContactRequest:
-      type: object
-      required:
-        - name
-        - email
-        - subject
-        - message
-      properties:
-        name:
-          type: string
-        email:
-          type: string
-          format: email
-        subject:
-          type: string
-        message:
-          type: string
-        partId:
-          type: string
-        partName:
-          type: string
-
-    SyntheticDataRequest:
-      type: object
-      required:
-        - category
-      properties:
-        category:
-          $ref: '#/components/schemas/PartCategory'
-        count:
-          type: integer
-          default: 10
-          minimum: 1
-          maximum: 100
-
-    SyntheticDataResponse:
-      type: object
-      properties:
-        message:
-          type: string
-        parts:
-          type: array
-          items:
-            $ref: '#/components/schemas/Part'
-
-    PartsListResponse:
-      type: object
-      properties:
-        parts:
-          type: array
-          items:
-            $ref: '#/components/schemas/Part'
-        count:
-          type: integer
-        nextCursor:
-          type: string
-          description: 다음 페이지 커서
-
-    # ==================== Error Schemas ====================
+      enum: *a4
+      description: 제안 상태
+      example: pending
     ErrorResponse:
       type: object
       properties:
@@ -1098,24 +543,730 @@ components:
           type: string
         statusCode:
           type: integer
-
-  responses:
-    BadRequest:
-      description: 잘못된 요청
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error: "잘못된 요청입니다"
-            statusCode: 400
-
-    InternalError:
-      description: 서버 오류
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error: "내부 서버 오류가 발생했습니다"
-            statusCode: 500
+      required:
+        - error
+    SearchResult:
+      type: object
+      properties:
+        partId:
+          type: string
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: 유사도 점수 (0-1)
+        part:
+          $ref: "#/components/schemas/Part"
+        reason:
+          type: string
+          description: Claude가 생성한 매칭 이유
+      required:
+        - partId
+        - score
+        - part
+        - reason
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        cached:
+          type: boolean
+          description: 캐시된 결과 여부
+        count:
+          type: integer
+      required:
+        - results
+        - cached
+        - count
+    SearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+          description: 검색 쿼리
+          example: 테슬라 모델3 배터리 80% 이상
+        filters:
+          $ref: "#/components/schemas/SearchFilters"
+        topK:
+          type: integer
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 50
+          default: 10
+          description: 반환할 결과 수 (최대 50)
+      required:
+        - query
+    PartsListResponse:
+      type: object
+      properties:
+        parts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Part"
+        count:
+          type: integer
+        nextCursor:
+          type: string
+          description: 다음 페이지 커서
+      required:
+        - parts
+        - count
+    PartRegistrationResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        partId:
+          type: string
+      required:
+        - message
+        - partId
+    PartRegistrationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: Tesla Model 3 Battery Pack
+        category:
+          type: string
+          enum: *a2
+          description: 부품 카테고리
+          example: battery
+        manufacturer:
+          type: string
+          example: Tesla
+        model:
+          type: string
+          example: Model 3 LR
+        year:
+          type: integer
+          minimum: 2010
+          maximum: 2030
+          example: 2023
+        condition:
+          type: string
+          enum: *a3
+          description: 부품 상태
+          example: used
+        price:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          example: 4500000
+        quantity:
+          type: integer
+          minimum: 0
+          exclusiveMinimum: true
+          example: 1
+        sellerId:
+          type: string
+        description:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          default: *a5
+        specifications:
+          $ref: "#/components/schemas/PartSpecifications"
+        useCases:
+          type: array
+          items:
+            $ref: "#/components/schemas/UseCase"
+        batteryHealth:
+          $ref: "#/components/schemas/BatteryHealthInfo"
+      required:
+        - name
+        - category
+        - manufacturer
+        - model
+        - year
+        - condition
+        - price
+        - quantity
+        - sellerId
+        - description
+    BatteryHealthResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        count:
+          type: integer
+      required:
+        - results
+        - count
+    BatteryHealthRequest:
+      type: object
+      properties:
+        batteryFilters:
+          $ref: "#/components/schemas/BatteryFilters"
+        topK:
+          type: integer
+          minimum: 0
+          exclusiveMinimum: true
+          default: 10
+    MaterialSearchRequest:
+      type: object
+      properties:
+        materialFilters:
+          $ref: "#/components/schemas/AdvancedMaterialFilters"
+        category:
+          type: string
+          enum: *a2
+          description: 부품 카테고리
+          example: battery
+        topK:
+          type: integer
+          minimum: 0
+          exclusiveMinimum: true
+          default: 10
+    WatchResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        watchId:
+          type: string
+      required:
+        - message
+        - watchId
+    WatchCriteria:
+      type: object
+      properties:
+        category:
+          type: string
+          enum: *a2
+          description: 부품 카테고리
+          example: battery
+        maxPrice:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+        minSpecs:
+          $ref: "#/components/schemas/PartSpecifications"
+        manufacturer:
+          type: string
+        keywords:
+          type: array
+          items:
+            type: string
+    WatchRequest:
+      type: object
+      properties:
+        buyerId:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        criteria:
+          $ref: "#/components/schemas/WatchCriteria"
+      required:
+        - buyerId
+        - criteria
+    ProposalResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        proposalId:
+          type: string
+      required:
+        - message
+        - proposalId
+    ProposalRequest:
+      type: object
+      properties:
+        fromCompanyId:
+          type: string
+        toCompanyId:
+          type: string
+        partIds:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        proposalType:
+          type: string
+          enum:
+            - buy
+            - sell
+        message:
+          type: string
+        quantity:
+          type: integer
+          minimum: 0
+          exclusiveMinimum: true
+        priceOffer:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+        terms:
+          $ref: "#/components/schemas/ProposalTerms"
+      required:
+        - fromCompanyId
+        - toCompanyId
+        - partIds
+        - proposalType
+    ProposalsListResponse:
+      type: object
+      properties:
+        proposals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Proposal"
+        count:
+          type: integer
+      required:
+        - proposals
+        - count
+    ContactResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        success:
+          type: boolean
+      required:
+        - message
+        - success
+    ContactRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        subject:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+        partId:
+          type: string
+        partName:
+          type: string
+      required:
+        - name
+        - email
+        - subject
+        - message
+    SyntheticDataResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        parts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Part"
+      required:
+        - message
+        - parts
+    SyntheticDataRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          enum: *a2
+          description: 부품 카테고리
+          example: battery
+        count:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      required:
+        - category
+  parameters: {}
+paths:
+  /api/search:
+    post:
+      tags:
+        - Search
+      summary: AI RAG 검색
+      description: |-
+        Amazon Bedrock 기반 RAG(Retrieval-Augmented Generation) 검색
+        - 쿼리 확장 (언어적 변형)
+        - 하이브리드 스코어링 (70% 벡터 + 30% BM25)
+        - S3 Vectors 벡터 유사도 검색
+        - 결과 캐싱 (7일 TTL)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: 검색 결과
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/parts:
+    get:
+      tags:
+        - Parts
+      summary: 부품 목록 조회
+      description: 커서 기반 페이지네이션으로 부품 목록 조회
+      parameters:
+        - schema:
+            type: string
+            enum: *a2
+            description: 부품 카테고리
+            example: battery
+          required: false
+          name: category
+          in: query
+        - schema:
+            type: integer
+            minimum: 0
+            exclusiveMinimum: true
+            description: 조회 개수 (기본값 20, 최대 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            description: 페이지네이션 커서
+            example: battery-001
+          required: false
+          name: cursor
+          in: query
+      responses:
+        "200":
+          description: 부품 목록
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartsListResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags:
+        - Parts
+      summary: 부품 등록
+      description: |-
+        새 부품 등록
+        - Titan Embeddings로 자동 임베딩 생성
+        - S3에 벡터 저장
+        - 비동기 규정 검사 트리거
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartRegistrationRequest"
+      responses:
+        "201":
+          description: 등록 완료
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartRegistrationResponse"
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/parts/{id}:
+    get:
+      tags:
+        - Parts
+      summary: 단일 부품 조회
+      description: 부품 ID로 상세 정보 조회 (메타데이터, 스펙, 사용사례 포함)
+      parameters:
+        - schema:
+            type: string
+            example: battery-001
+          required: true
+          name: partId
+          in: path
+      responses:
+        "200":
+          description: 부품 상세 정보
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Part"
+        "404":
+          description: 부품을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/battery-health:
+    post:
+      tags:
+        - Battery
+      summary: 배터리 건강도 기반 검색
+      description: |-
+        배터리 SOH(State of Health) 기반 고급 검색
+        - 재사용/재활용/폐기 판단
+        - 양극재 타입별 필터링
+        - 적합 용도 추천 (ESS, 전동킥보드 등)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatteryHealthRequest"
+      responses:
+        "200":
+          description: 배터리 검색 결과
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatteryHealthResponse"
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/material-search:
+    post:
+      tags:
+        - Material
+      summary: 소재 특성 기반 검색
+      description: |-
+        알루미늄 합금 등 소재 물성 기반 검색
+        - 인장강도, 항복강도, 탄성계수 범위 필터
+        - 합금 번호 (6061, 7075 등) 검색
+        - 재활용률 필터링
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialSearchRequest"
+      responses:
+        "200":
+          description: 소재 검색 결과
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/watch:
+    post:
+      tags:
+        - Watch
+      summary: 알림 등록
+      description: |-
+        원하는 부품 조건에 대한 알림 등록
+        - 조건 매칭 시 SNS로 알림 발송
+        - 이메일/전화번호로 알림 수신
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WatchRequest"
+      responses:
+        "201":
+          description: 알림 등록 완료
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchResponse"
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/proposals:
+    post:
+      tags:
+        - Proposals
+      summary: 거래 제안 생성
+      description: B2B 거래 제안서 생성
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProposalRequest"
+      responses:
+        "201":
+          description: 제안 생성 완료
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposalResponse"
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags:
+        - Proposals
+      summary: 거래 제안 조회
+      description: 회사별 거래 제안 목록 조회
+      parameters:
+        - schema:
+            type: string
+            enum: *a4
+            description: 제안 상태
+            example: pending
+          required: true
+          name: status
+          in: query
+        - schema:
+            type: string
+            description: 조회할 회사 ID
+          required: true
+          name: companyId
+          in: query
+      responses:
+        "200":
+          description: 제안 목록
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposalsListResponse"
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/contact:
+    post:
+      tags:
+        - Contact
+      summary: 문의 접수
+      description: 일반 문의 접수 (SNS로 알림 발송)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactRequest"
+      responses:
+        "200":
+          description: 문의 접수 완료
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactResponse"
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/synthetic:
+    post:
+      tags:
+        - Synthetic
+      summary: 합성 데이터 생성
+      description: |-
+        테스트용 합성 부품 데이터 생성
+        - 카테고리별 현실적인 가격 범위 적용
+        - 배터리의 경우 SOH, 양극재 타입 등 자동 생성
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyntheticDataRequest"
+      responses:
+        "200":
+          description: 생성 완료
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyntheticDataResponse"
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

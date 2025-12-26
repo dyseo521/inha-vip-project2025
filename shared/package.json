@@ -4,11 +4,26 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schemas": {
+      "types": "./dist/schemas/index.d.ts",
+      "import": "./dist/schemas/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch"
   },
+  "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.3.4",
+    "zod": "^3.25.76"
+  },
   "devDependencies": {
+    "tsx": "^4.21.0",
     "typescript": "^5.3.3"
   }
 }
