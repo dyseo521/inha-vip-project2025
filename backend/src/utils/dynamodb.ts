@@ -181,7 +181,34 @@ export async function queryGSI1WithPagination(
 }
 
 /**
- * Scan table with pagination support
+ * Query GSI2 for all METADATA items with pagination support
+ * Uses GSI2 (GSI2PK='ALL#METADATA') for efficient full-table query
+ * Returns items in descending order (newest first) by default
+ */
+export async function queryAllMetadataWithPagination(
+  limit: number,
+  exclusiveStartKey?: Record<string, any>,
+  scanIndexForward: boolean = false // false = descending (newest first)
+): Promise<PaginatedResult> {
+  const command = new QueryCommand({
+    TableName: TABLE_NAME,
+    IndexName: 'GSI2',
+    KeyConditionExpression: 'GSI2PK = :gsi2pk',
+    ExpressionAttributeValues: { ':gsi2pk': 'ALL#METADATA' },
+    Limit: limit,
+    ScanIndexForward: scanIndexForward,
+    ...(exclusiveStartKey && { ExclusiveStartKey: exclusiveStartKey }),
+  });
+
+  const response = await ddbDocClient.send(command);
+  return {
+    items: response.Items as DynamoDBItem[] || [],
+    lastKey: response.LastEvaluatedKey || null,
+  };
+}
+
+/**
+ * Scan table with pagination support (DEPRECATED - use queryAllMetadataWithPagination)
  * Returns METADATA items only, sorted by createdAt descending
  */
 export async function scanTableWithPagination(

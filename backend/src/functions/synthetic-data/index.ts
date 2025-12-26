@@ -377,6 +377,8 @@ async function savePart(partData: any): Promise<string> {
     updatedAt: timestamp,
     GSI1PK: `CATEGORY#${partData.category}`,
     GSI1SK: `CREATED_AT#${timestamp}`,
+    GSI2PK: 'ALL#METADATA',
+    GSI2SK: `CREATED_AT#${timestamp}`,
   };
 
   // 배터리 건강 정보 추가

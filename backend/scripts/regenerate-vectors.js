@@ -159,12 +159,15 @@ async function updateVectorItem(partId, s3Key) {
  * Main function
  */
 async function main() {
+  const forceRegenerate = process.argv.includes('--force');
+
   console.log('======================================================================');
-  console.log('기존 벡터 재생성 스크립트 (Titan v2, 1024차원)');
+  console.log('벡터 재생성 스크립트 (Titan v2, 1024차원, useCases 포함)');
   console.log('======================================================================\n');
   console.log(`타겟 테이블: ${TABLE_NAME}`);
   console.log(`벡터 버킷: ${VECTORS_BUCKET}`);
-  console.log(`임베딩 모델: ${EMBEDDING_MODEL_ID}\n`);
+  console.log(`임베딩 모델: ${EMBEDDING_MODEL_ID}`);
+  console.log(`강제 재생성: ${forceRegenerate ? '예 (--force)' : '아니오'}\n`);
 
   // Step 1: Scan DynamoDB for all VECTOR items
   console.log('Step 1: DynamoDB에서 모든 VECTOR 아이템 스캔 중...\n');
@@ -180,7 +183,7 @@ async function main() {
   const vectorItems = (scanResponse.Items || []).map(item => unmarshall(item));
   console.log(`총 ${vectorItems.length}개 벡터 아이템 발견\n`);
 
-  // Step 2: Check vector dimensions
+  // Step 2: Check vector dimensions (or force all)
   console.log('Step 2: 벡터 차원 확인 중...\n');
 
   const itemsToRegenerate = [];
@@ -194,15 +197,20 @@ async function main() {
       continue;
     }
 
-    const dimension = await getVectorDimension(s3Key);
-
-    if (dimension === 1536) {
-      console.log(`  🔄 ${partId}: 1536차원 → 재생성 필요`);
+    if (forceRegenerate) {
+      console.log(`  🔄 ${partId}: 강제 재생성 대상`);
       itemsToRegenerate.push({ partId, s3Key });
-    } else if (dimension === 1024) {
-      console.log(`  ✓ ${partId}: 1024차원 → 이미 올바름`);
     } else {
-      console.log(`  ⚠️ ${partId}: ${dimension}차원 → 알 수 없는 차원`);
+      const dimension = await getVectorDimension(s3Key);
+
+      if (dimension === 1536) {
+        console.log(`  🔄 ${partId}: 1536차원 → 재생성 필요`);
+        itemsToRegenerate.push({ partId, s3Key });
+      } else if (dimension === 1024) {
+        console.log(`  ✓ ${partId}: 1024차원 → 이미 올바름`);
+      } else {
+        console.log(`  ⚠️ ${partId}: ${dimension}차원 → 알 수 없는 차원`);
+      }
     }
   }
 

@@ -112,6 +112,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       updatedAt: timestamp,
       GSI1PK: `CATEGORY#${category}`,
       GSI1SK: `CREATED_AT#${timestamp}`,
+      GSI2PK: 'ALL#METADATA',
+      GSI2SK: `CREATED_AT#${timestamp}`,
     };
 
     await putItem(partMetadata);

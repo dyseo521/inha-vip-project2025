@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { getItem, queryByPK, queryGSI1WithPagination, scanTableWithPagination } from '/opt/nodejs/utils/dynamodb.js';
+import { getItem, queryByPK, queryGSI1WithPagination, queryAllMetadataWithPagination } from '/opt/nodejs/utils/dynamodb.js';
 import { successResponse, errorResponse } from '/opt/nodejs/utils/response.js';
 
 /**
@@ -82,13 +82,13 @@ async function listParts(params: any, event: APIGatewayProxyEvent): Promise<APIG
       false // ScanIndexForward = false for descending order
     );
   } else {
-    // Scan for all METADATA records with pagination
-    result = await scanTableWithPagination(parsedLimit, exclusiveStartKey);
+    // Query all METADATA records using GSI2 with pagination (newest first)
+    result = await queryAllMetadataWithPagination(parsedLimit, exclusiveStartKey, false);
   }
 
   // Format the response
   const metadata = result.items.map(p => {
-    const { PK, SK, GSI1PK, GSI1SK, ...data } = p;
+    const { PK, SK, GSI1PK, GSI1SK, GSI2PK, GSI2SK, ...data } = p;
     return {
       partId: PK.split('#')[1],
       ...data,
