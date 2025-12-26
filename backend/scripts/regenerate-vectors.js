@@ -10,7 +10,7 @@
  * 4. Updates DynamoDB VECTOR items
  */
 
-import { DynamoDBClient, ScanCommand, PutItemCommand, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, ScanCommand, PutItemCommand, GetItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
@@ -61,16 +61,65 @@ async function getVectorDimension(s3Key) {
 }
 
 /**
- * Prepare text for embedding
+ * Get use cases for a part from DynamoDB
+ */
+async function getUseCases(partId) {
+  try {
+    const response = await dynamoClient.send(new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: marshall({
+        ':pk': `PART#${partId}`,
+        ':sk': 'USAGE#'
+      })
+    }));
+    return (response.Items || []).map(item => {
+      const { PK, SK, ...data } = unmarshall(item);
+      return data;
+    });
+  } catch (error) {
+    console.log(`  ⚠️ useCases 조회 실패: ${error.message}`);
+    return [];
+  }
+}
+
+/**
+ * Prepare text for embedding (synced with bedrock.ts preparePartText)
  */
 function preparePartText(part) {
-  let text = `${part.name || ''} ${part.category || ''} ${part.manufacturer || ''} ${part.model || ''}`;
+  const sections = [];
 
+  // [부품정보]
+  sections.push('[부품정보]');
+  sections.push(`부품명: ${part.name || ''}`);
+  sections.push(`카테고리: ${part.category || ''}`);
+  sections.push(`제조사: ${part.manufacturer || ''}`);
+  sections.push(`모델: ${part.model || ''}`);
+
+  // [설명]
   if (part.description) {
-    text += ` ${part.description}`;
+    sections.push('[설명]');
+    sections.push(part.description);
   }
 
-  return text.trim();
+  // [활용 사례]
+  if (part.useCases && Array.isArray(part.useCases) && part.useCases.length > 0) {
+    sections.push('[활용 사례]');
+    part.useCases.forEach((useCase, index) => {
+      sections.push(`사례 ${index + 1}: ${useCase.industry || ''} - ${useCase.application || ''}`);
+      if (useCase.description) {
+        sections.push(useCase.description.substring(0, 100));
+      }
+      if (useCase.requirements) {
+        const reqStr = Object.entries(useCase.requirements)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(', ');
+        sections.push(`요구사항: ${reqStr}`);
+      }
+    });
+  }
+
+  return sections.join('\n');
 }
 
 /**
@@ -193,8 +242,14 @@ async function main() {
 
       const metadata = unmarshall(metadataResponse.Item);
 
-      // Generate new embedding
-      const text = preparePartText(metadata);
+      // Get use cases for this part
+      const useCases = await getUseCases(partId);
+      if (useCases.length > 0) {
+        console.log(`  → ${useCases.length}개 활용 사례 발견`);
+      }
+
+      // Generate new embedding with useCases
+      const text = preparePartText({ ...metadata, useCases });
       console.log(`  → 텍스트: "${text.substring(0, 50)}..."`);
 
       const embedding = await generateEmbedding(text);

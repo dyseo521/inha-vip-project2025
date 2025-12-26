@@ -256,6 +256,24 @@ export function preparePartText(part: any): string {
   sections.push('[설명]');
   sections.push(part.description || '상세 설명 없음');
 
+  // Use cases section for RAG search improvement
+  if (part.useCases && Array.isArray(part.useCases) && part.useCases.length > 0) {
+    sections.push('[활용 사례]');
+    part.useCases.forEach((useCase: any, index: number) => {
+      sections.push(`사례 ${index + 1}: ${useCase.industry} - ${useCase.application}`);
+      if (useCase.description) {
+        // 설명은 처음 100자만 포함 (임베딩 효율성)
+        sections.push(useCase.description.substring(0, 100));
+      }
+      if (useCase.requirements) {
+        const reqStr = Object.entries(useCase.requirements)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(', ');
+        sections.push(`요구사항: ${reqStr}`);
+      }
+    });
+  }
+
   // Keywords section for improved recall
   const keywords = generateKeywords(part);
   if (keywords.length > 0) {

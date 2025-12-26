@@ -149,6 +149,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       model,
       description,
       specifications,
+      useCases,
     });
 
     const embedding = await generateEmbedding(partText);
