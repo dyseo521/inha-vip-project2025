@@ -3,6 +3,7 @@ import { createHash } from 'crypto';
 export interface ParsedLogEvent {
   functionName: string;
   requestId: string;
+  xrayTraceId?: string;
   errorType: string;
   errorMessage: string;
   stackTrace?: string;
@@ -33,6 +34,9 @@ export function parseLogEvent(logEvent: any, logGroup: string): ParsedLogEvent {
   // 스택 추적 추출
   const stackTrace = extractStackTrace(message);
 
+  // X-Ray Trace ID 추출
+  const xrayTraceId = extractXRayTraceId(message);
+
   // 에러 해시 생성 (중복 제거용)
   const errorHash = createHash('md5')
     .update(`${functionName}:${errorType}:${errorMessage.slice(0, 200)}`)
@@ -41,6 +45,7 @@ export function parseLogEvent(logEvent: any, logGroup: string): ParsedLogEvent {
   return {
     functionName,
     requestId,
+    xrayTraceId,
     errorType,
     errorMessage,
     stackTrace,
@@ -128,4 +133,11 @@ function extractStackTrace(message: string): string | undefined {
   }
 
   return undefined;
+}
+
+function extractXRayTraceId(message: string): string | undefined {
+  // X-Ray Trace ID 패턴: Root=1-xxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx
+  // 예: Root=1-67890abc-def0123456789abcdef01234
+  const match = message.match(/Root=(1-[0-9a-f]{8}-[0-9a-f]{24})/i);
+  return match ? match[1] : undefined;
 }

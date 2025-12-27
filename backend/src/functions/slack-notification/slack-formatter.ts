@@ -1,6 +1,34 @@
 import { ParsedLogEvent } from './parser.js';
 import { Severity, getSeverityColor, getSeverityEmoji } from './severity.js';
 
+const AWS_REGION = 'ap-northeast-2';
+const DASHBOARD_NAME = 'eecar-monitoring';
+
+/**
+ * AWS 콘솔 링크 생성 함수들
+ */
+function generateCloudWatchLogsUrl(logGroup: string): string {
+  const encodedLogGroup = encodeURIComponent(logGroup);
+  return `https://console.aws.amazon.com/cloudwatch/home?region=${AWS_REGION}#logsV2:log-groups/log-group/${encodedLogGroup}`;
+}
+
+function generateXRayServiceMapUrl(): string {
+  return `https://console.aws.amazon.com/xray/home?region=${AWS_REGION}#/service-map`;
+}
+
+function generateXRayTraceUrl(traceId: string): string {
+  return `https://console.aws.amazon.com/xray/home?region=${AWS_REGION}#/traces/${traceId}`;
+}
+
+function generateCloudWatchDashboardUrl(): string {
+  return `https://console.aws.amazon.com/cloudwatch/home?region=${AWS_REGION}#dashboards:name=${DASHBOARD_NAME}`;
+}
+
+/**
+ * Slack Block Kit 형식으로 메시지 포맷팅
+ * - 레거시 attachments 대신 blocks 사용
+ * - CloudWatch Logs, X-Ray, Dashboard 링크 버튼 제공
+ */
 export function formatSlackMessage(
   event: ParsedLogEvent,
   severity: Severity,
@@ -8,11 +36,7 @@ export function formatSlackMessage(
 ): any {
   const color = getSeverityColor(severity);
   const emoji = getSeverityEmoji(severity);
-
-  // CloudWatch Logs 링크 생성
-  const region = 'ap-northeast-2';
-  const encodedLogGroup = encodeURIComponent(logGroup);
-  const logsUrl = `https://console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${encodedLogGroup}`;
+  const timestamp = new Date(event.timestamp).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
 
   // 에러 메시지 포맷팅 (최대 300자)
   const truncatedMessage = event.errorMessage.length > 300
@@ -26,53 +50,129 @@ export function formatSlackMessage(
       : event.stackTrace
     : undefined;
 
-  const fields: any[] = [
+  // URL 생성
+  const logsUrl = generateCloudWatchLogsUrl(logGroup);
+  const xrayUrl = event.xrayTraceId
+    ? generateXRayTraceUrl(event.xrayTraceId)
+    : generateXRayServiceMapUrl();
+  const dashboardUrl = generateCloudWatchDashboardUrl();
+
+  // Block Kit 형식 메시지 구성
+  const blocks: any[] = [
+    // 헤더
     {
-      title: '에러 타입',
-      value: event.errorType,
-      short: true,
+      type: 'header',
+      text: {
+        type: 'plain_text',
+        text: `${emoji} ${severity}: ${event.functionName}`,
+        emoji: true,
+      },
     },
+    // 구분선
+    { type: 'divider' },
+    // 에러 정보 (2열 레이아웃)
     {
-      title: '발생 시간',
-      value: new Date(event.timestamp).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
-      short: true,
+      type: 'section',
+      fields: [
+        {
+          type: 'mrkdwn',
+          text: `*에러 타입*\n${event.errorType}`,
+        },
+        {
+          type: 'mrkdwn',
+          text: `*발생 시간*\n${timestamp}`,
+        },
+      ],
     },
+    // 에러 메시지
     {
-      title: '에러 메시지',
-      value: `\`\`\`${truncatedMessage}\`\`\``,
-      short: false,
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `*에러 메시지*\n\`\`\`${truncatedMessage}\`\`\``,
+      },
     },
   ];
 
+  // 스택 추적 (있는 경우)
   if (truncatedStackTrace) {
-    fields.push({
-      title: '스택 추적',
-      value: `\`\`\`${truncatedStackTrace}\`\`\``,
-      short: false,
+    blocks.push({
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `*스택 추적*\n\`\`\`${truncatedStackTrace}\`\`\``,
+      },
     });
   }
 
-  fields.push({
-    title: 'Request ID',
-    value: `\`${event.requestId}\``,
-    short: true,
+  // Request ID
+  blocks.push({
+    type: 'context',
+    elements: [
+      {
+        type: 'mrkdwn',
+        text: `*Request ID:* \`${event.requestId}\`${event.xrayTraceId ? ` | *Trace ID:* \`${event.xrayTraceId}\`` : ''}`,
+      },
+    ],
   });
 
+  // 구분선
+  blocks.push({ type: 'divider' });
+
+  // 액션 버튼 (CloudWatch Logs, X-Ray, Dashboard)
+  blocks.push({
+    type: 'actions',
+    elements: [
+      {
+        type: 'button',
+        text: {
+          type: 'plain_text',
+          text: '📊 CloudWatch Logs',
+          emoji: true,
+        },
+        url: logsUrl,
+        action_id: 'cloudwatch_logs',
+      },
+      {
+        type: 'button',
+        text: {
+          type: 'plain_text',
+          text: event.xrayTraceId ? '🔍 X-Ray Trace' : '🔍 X-Ray Map',
+          emoji: true,
+        },
+        url: xrayUrl,
+        action_id: 'xray',
+      },
+      {
+        type: 'button',
+        text: {
+          type: 'plain_text',
+          text: '📈 Dashboard',
+          emoji: true,
+        },
+        url: dashboardUrl,
+        action_id: 'dashboard',
+      },
+    ],
+  });
+
+  // Footer 컨텍스트
+  blocks.push({
+    type: 'context',
+    elements: [
+      {
+        type: 'mrkdwn',
+        text: `EECAR Lambda Monitoring | ${new Date().toISOString()}`,
+      },
+    ],
+  });
+
+  // Block Kit + 레거시 attachments 조합 (색상 표시용)
   return {
     attachments: [
       {
         color,
-        title: `${emoji} ${severity}: ${event.functionName}`,
-        fields,
-        actions: [
-          {
-            type: 'button',
-            text: '📊 CloudWatch Logs 보기',
-            url: logsUrl,
-          },
-        ],
-        footer: 'EECAR Lambda Monitoring',
-        ts: Math.floor(event.timestamp / 1000),
+        blocks,
       },
     ],
   };
