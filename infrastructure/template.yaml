@@ -350,6 +350,90 @@ Resources:
                 - logs:PutLogEvents
               Resource: '*'
 
+  # 자동이 2.0: AI DevOps 어시스턴트 (Slack Bot + ReAct Agent)
+  SlackAgentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/dist/functions/slack-agent/
+      Handler: index.handler
+      Description: 자동이 2.0 - AI DevOps 어시스턴트 (Slash Commands, @멘션, 에러 분석)
+      MemorySize: 1024  # AI 처리용 증설
+      Timeout: 60  # ReAct 루프용 (Slack은 3초 내 응답 필요, 비동기 처리)
+      Layers:
+        - !Ref EECARUtilsLayer
+      Environment:
+        Variables:
+          SLACK_BOT_TOKEN_SSM_PARAM: /eecar/slack/bot-token
+          SLACK_SIGNING_SECRET_SSM_PARAM: /eecar/slack/signing-secret
+          BEDROCK_KB_ID_SSM_PARAM: /eecar/bedrock/kb-id
+          S3_VECTORS_BUCKET: eecar-vectors-index-12234628
+          S3_VECTORS_MEMORY_INDEX: jadong-memories
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PartsTable
+        # SSM: Slack Bot Token, Signing Secret, Bedrock KB ID
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/eecar/slack/bot-token'
+                - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/eecar/slack/signing-secret'
+                - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/eecar/bedrock/kb-id'
+        # CloudWatch Logs: 에러 로그 조회
+        - Statement:
+            - Effect: Allow
+              Action:
+                - logs:DescribeLogGroups
+                - logs:DescribeLogStreams
+                - logs:GetLogEvents
+                - logs:FilterLogEvents
+                - logs:StartQuery
+                - logs:GetQueryResults
+              Resource: '*'
+        # CloudWatch Metrics: Lambda 상태 조회
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cloudwatch:GetMetricData
+                - cloudwatch:GetMetricStatistics
+                - cloudwatch:ListMetrics
+              Resource: '*'
+        # Bedrock: Claude (분석), Titan (임베딩)
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource: 'arn:aws:bedrock:ap-northeast-2::foundation-model/*'
+        # S3 Vectors: jadong-memories (장기 기억)
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3vectors:QueryVectors
+                - s3vectors:GetVectors
+                - s3vectors:PutVectors
+                - s3vectors:DeleteVectors
+              Resource:
+                - 'arn:aws:s3vectors:ap-northeast-2:425454508084:bucket/eecar-vectors-index-12234628'
+                - 'arn:aws:s3vectors:ap-northeast-2:425454508084:bucket/eecar-vectors-index-12234628/index/jadong-memories'
+                - 'arn:aws:s3vectors:ap-northeast-2:425454508084:bucket/eecar-vectors-index-12234628/index/parts-vectors'
+                - 'arn:aws:s3vectors:ap-northeast-2:425454508084:bucket/eecar-vectors-index-12234628/index/eecar-codebase'
+        # Bedrock KB: 코드베이스 검색 (Phase 3)
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:Retrieve
+                - bedrock:RetrieveAndGenerate
+              Resource: !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/*'
+      Events:
+        SlackEvents:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EECARApi
+            Path: /api/slack/events
+            Method: POST
+
   # DynamoDB Table (Single-table design for cost optimization)
   PartsTable:
     Type: AWS::DynamoDB::Table
