@@ -48,6 +48,7 @@ coverage/
 tmp/
 temp/
 
+scripts/
 data/
 !backend/src/functions/synthetic-data/data/
 
@@ -63,3 +64,4 @@ CLAUDE.md
 docs/TECHNICAL_HIGHLIGHTS.md
 docs/LAMBDA_FUNCTIONS_GUIDE.md
 docs/INFRASTRUCTURE_ARCHITECTURE.md
+docs/generated-diagrams
