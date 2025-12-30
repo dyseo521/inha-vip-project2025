@@ -12,21 +12,68 @@ import {
   CloudWatchClient,
   GetMetricStatisticsCommand,
 } from '@aws-sdk/client-cloudwatch';
+import {
+  LambdaClient,
+  ListFunctionsCommand,
+} from '@aws-sdk/client-lambda';
 import { LambdaStatus, LogEntry } from '../types.js';
 
 const logsClient = new CloudWatchLogsClient({ region: 'ap-northeast-2' });
 const cwClient = new CloudWatchClient({ region: 'ap-northeast-2' });
+const lambdaClient = new LambdaClient({ region: 'ap-northeast-2' });
 
 // Lambda 함수 이름 접두사 (SAM 스택 이름)
 const STACK_PREFIX = process.env.STACK_NAME || 'eecar-stack';
+
+// 함수 이름 캐시 (SAM suffix 포함된 실제 이름)
+const functionNameCache: Map<string, string> = new Map();
+let cacheLoaded = false;
+
+/**
+ * Lambda 함수 목록을 가져와서 캐시
+ */
+async function loadFunctionNameCache(): Promise<void> {
+  if (cacheLoaded) return;
+
+  try {
+    const response = await lambdaClient.send(new ListFunctionsCommand({}));
+    const functions = response.Functions || [];
+
+    for (const fn of functions) {
+      if (fn.FunctionName?.startsWith(STACK_PREFIX)) {
+        // eecar-stack-VectorSearchFunction-xxx -> VectorSearchFunction
+        const parts = fn.FunctionName.split('-');
+        // 첫 두 부분 (eecar-stack) 제외하고 마지막 (suffix) 제외
+        if (parts.length >= 3) {
+          const shortName = parts.slice(2, -1).join('-');
+          functionNameCache.set(shortName, fn.FunctionName);
+        }
+      }
+    }
+    cacheLoaded = true;
+    console.log('Function name cache loaded:', Object.fromEntries(functionNameCache));
+  } catch (error) {
+    console.error('Failed to load function name cache:', error);
+  }
+}
+
+/**
+ * 짧은 함수 이름을 실제 Lambda 함수 이름으로 변환
+ */
+async function resolveActualFunctionName(shortName: string): Promise<string> {
+  await loadFunctionNameCache();
+  return functionNameCache.get(shortName) || `${STACK_PREFIX}-${shortName}`;
+}
 
 /**
  * Lambda 함수 상태 조회
  */
 export async function getLambdaStatus(functionName: string): Promise<LambdaStatus> {
-  const fullFunctionName = `${STACK_PREFIX}-${functionName}`;
+  const fullFunctionName = await resolveActualFunctionName(functionName);
   const endTime = new Date();
   const startTime = new Date(endTime.getTime() - 60 * 60 * 1000); // 1시간 전
+
+  console.log(`Getting status for ${functionName} -> ${fullFunctionName}`);
 
   try {
     // 호출 횟수
@@ -114,7 +161,7 @@ export async function getRecentLogs(
   minutes: number = 30,
   filter: 'ERROR' | 'WARN' | 'INFO' | 'ALL' = 'ERROR'
 ): Promise<LogEntry[]> {
-  const fullFunctionName = `${STACK_PREFIX}-${functionName}`;
+  const fullFunctionName = await resolveActualFunctionName(functionName);
   const logGroupName = `/aws/lambda/${fullFunctionName}`;
   const endTime = new Date();
   const startTime = new Date(endTime.getTime() - minutes * 60 * 1000);
@@ -158,7 +205,7 @@ export async function queryLogs(
   query: string,
   minutes: number = 60
 ): Promise<Record<string, unknown>[]> {
-  const fullFunctionName = `${STACK_PREFIX}-${functionName}`;
+  const fullFunctionName = await resolveActualFunctionName(functionName);
   const logGroupName = `/aws/lambda/${fullFunctionName}`;
   const endTime = new Date();
   const startTime = new Date(endTime.getTime() - minutes * 60 * 1000);
