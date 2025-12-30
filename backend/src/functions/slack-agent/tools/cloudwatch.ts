@@ -18,7 +18,7 @@ const logsClient = new CloudWatchLogsClient({ region: 'ap-northeast-2' });
 const cwClient = new CloudWatchClient({ region: 'ap-northeast-2' });
 
 // Lambda 함수 이름 접두사 (SAM 스택 이름)
-const STACK_PREFIX = process.env.STACK_NAME || 'eecar-prod';
+const STACK_PREFIX = process.env.STACK_NAME || 'eecar-stack';
 
 /**
  * Lambda 함수 상태 조회
