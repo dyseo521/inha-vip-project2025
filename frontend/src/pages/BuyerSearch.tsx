@@ -6,71 +6,14 @@ import type { SearchRequest, SearchResponse, Part, WatchCriteria } from '@shared
 import { mockParts } from '../data/mockParts';
 import { getApiUrl } from '../config';
 import { getRelativeTime } from '../utils/relativeTime';
-
-// 카테고리 매핑 (한글 -> 영문)
-const categoryMap: Record<string, string> = {
-  '배터리': 'battery',
-  '모터': 'motor',
-  '인버터': 'inverter',
-  '충전기': 'charger',
-  '전장 부품': 'electronics',
-  '차체-섀시/프레임': 'body-chassis-frame',
-  '차체-패널': 'body-panel',
-  '차체-도어': 'body-door',
-  '차체-창/유리': 'body-window',
-  '내장재': 'interior',
-  '기타': 'other',
-};
-
-// 카테고리별 기본 이미지
-const categoryDefaultImages: Record<string, string> = {
-  'battery': '/image/batterypack_1.jpg',
-  'motor': '/image/motor_1.jpg',
-  'inverter': '/image/inverter_1.png',
-  'body-chassis-frame': '/image/car_body_1.jpg',
-  'body-panel': '/image/car_body_1.jpg',
-  'body-door': '/image/car_body_1.jpg',
-  'body-window': '/image/car_body_1.jpg',
-  'charger': '/image/batterypack_1.jpg',
-  'electronics': '/image/inverter_1.png',
-  'interior': '/image/car_body_1.jpg',
-  'other': '/image/car_body_1.jpg',
-};
-
-// 이미지 URL 가져오기 헬퍼 함수
-const getPartImageUrl = (part: Part): string => {
-  if (part.images && part.images.length > 0 && part.images[0]) {
-    return part.images[0];
-  }
-  return categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
-};
-
-// mockParts를 Part 타입으로 변환하는 헬퍼 함수
-const convertMockPartToPart = (mockPart: any): Part => {
-  // 한글 카테고리를 영문으로 변환
-  const categoryEng = Object.entries(categoryMap).find(
-    ([kor, _]) => mockPart.category === kor
-  )?.[1] || 'other';
-
-  return {
-    partId: mockPart.id,
-    name: mockPart.name,
-    category: categoryEng as any,
-    manufacturer: mockPart.manufacturer,
-    model: mockPart.model,
-    year: mockPart.year,
-    condition: 'used' as any,
-    price: mockPart.price,
-    quantity: mockPart.quantity,
-    sellerId: mockPart.seller?.company || 'demo-seller',
-    description: mockPart.description,
-    images: mockPart.images,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    specifications: mockPart.specifications,
-    useCases: mockPart.useCases
-  };
-};
+import {
+  categoryMap,
+  categoryDefaultImages,
+  getPartImageUrl,
+  convertMockPartToPart,
+} from '../constants/categoryImages';
+import { useFilteredParts } from '../hooks';
+import { Modal, Button } from '../components/ui';
 
 export default function BuyerSearch() {
   const navigate = useNavigate();
@@ -363,22 +306,12 @@ export default function BuyerSearch() {
     setAiDisplayLimit(6);
   }, [searchParams]);
 
-  // 가격 및 검색어 필터링된 부품 목록
-  const filteredParts = allParts.filter(part => {
-    // 가격 필터
-    const priceMatch = part.price >= priceRange[0] && part.price <= priceRange[1];
-
-    // 기본 모드에서 검색어가 있을 경우 필터링
-    if (!isAIMode && query.trim()) {
-      const searchTerm = query.toLowerCase();
-      const nameMatch = (part.name || '').toLowerCase().includes(searchTerm);
-      const manufacturerMatch = (part.manufacturer || '').toLowerCase().includes(searchTerm);
-      const modelMatch = (part.model || '').toLowerCase().includes(searchTerm);
-      const textMatch = nameMatch || manufacturerMatch || modelMatch;
-      return priceMatch && textMatch;
-    }
-
-    return priceMatch;
+  // 가격 및 검색어 필터링된 부품 목록 (useMemo 최적화)
+  const filteredParts = useFilteredParts({
+    parts: allParts,
+    priceRange,
+    query,
+    isAIMode,
   });
 
   // AI 검색 결과 표시 제한
@@ -919,92 +852,87 @@ export default function BuyerSearch() {
       </main>
 
       {/* Watch 모달 */}
-      {showWatchModal && (
-        <div className="modal-overlay" onClick={() => setShowWatchModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>관심 부품 알림 설정</h3>
-              <button className="close-button" onClick={() => setShowWatchModal(false)}>
-                ✕
-              </button>
-            </div>
+      <Modal
+        isOpen={showWatchModal}
+        onClose={() => setShowWatchModal(false)}
+        title="관심 부품 알림 설정"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => setShowWatchModal(false)}
+              fullWidth
+            >
+              취소
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateWatch}
+              isLoading={createWatchMutation.isPending}
+              fullWidth
+            >
+              알림 설정하기
+            </Button>
+          </>
+        }
+      >
+        <p className="modal-description">
+          원하는 조건에 맞는 부품이 등록되면 이메일로 알려드립니다.
+        </p>
 
-            <div className="modal-body">
-              <p className="modal-description">
-                원하는 조건에 맞는 부품이 등록되면 이메일로 알려드립니다.
-              </p>
-
-              <div className="form-group">
-                <label>이메일 주소 *</label>
-                <input
-                  type="email"
-                  placeholder="example@email.com"
-                  value={watchEmail}
-                  onChange={(e) => setWatchEmail(e.target.value)}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>카테고리</label>
-                <select
-                  value={watchCategory}
-                  onChange={(e) => setWatchCategory(e.target.value)}
-                  className="form-select"
-                >
-                  <option value="">전체</option>
-                  {categories.filter(c => c !== 'all').map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>최대 가격 (원)</label>
-                <input
-                  type="number"
-                  placeholder="10000000"
-                  value={watchMaxPrice}
-                  onChange={(e) => setWatchMaxPrice(Number(e.target.value))}
-                  className="form-input"
-                  step="100000"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>키워드 (쉼표로 구분)</label>
-                <input
-                  type="text"
-                  placeholder="예: Tesla, 고성능, ESS"
-                  value={watchKeywords}
-                  onChange={(e) => setWatchKeywords(e.target.value)}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="modal-tip">
-                조건을 입력하지 않으면 모든 부품에 대해 알림을 받습니다.
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button
-                className="cancel-button"
-                onClick={() => setShowWatchModal(false)}
-              >
-                취소
-              </button>
-              <button
-                className="submit-button"
-                onClick={handleCreateWatch}
-                disabled={createWatchMutation.isPending}
-              >
-                {createWatchMutation.isPending ? '설정 중...' : '알림 설정하기'}
-              </button>
-            </div>
-          </div>
+        <div className="form-group">
+          <label>이메일 주소 *</label>
+          <input
+            type="email"
+            placeholder="example@email.com"
+            value={watchEmail}
+            onChange={(e) => setWatchEmail(e.target.value)}
+            className="form-input"
+            aria-required="true"
+          />
         </div>
-      )}
+
+        <div className="form-group">
+          <label>카테고리</label>
+          <select
+            value={watchCategory}
+            onChange={(e) => setWatchCategory(e.target.value)}
+            className="form-select"
+          >
+            <option value="">전체</option>
+            {categories.filter(c => c !== 'all').map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>최대 가격 (원)</label>
+          <input
+            type="number"
+            placeholder="10000000"
+            value={watchMaxPrice}
+            onChange={(e) => setWatchMaxPrice(Number(e.target.value))}
+            className="form-input"
+            step="100000"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>키워드 (쉼표로 구분)</label>
+          <input
+            type="text"
+            placeholder="예: Tesla, 고성능, ESS"
+            value={watchKeywords}
+            onChange={(e) => setWatchKeywords(e.target.value)}
+            className="form-input"
+          />
+        </div>
+
+        <div className="modal-tip">
+          조건을 입력하지 않으면 모든 부품에 대해 알림을 받습니다.
+        </div>
+      </Modal>
 
       <style>{`
         .buyer-search {
