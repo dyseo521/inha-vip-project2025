@@ -5,65 +5,12 @@ import type { Part } from '@shared/index';
 import { useAuth } from '../context/AuthContext';
 import { mockParts } from '../data/mockParts';
 import { getApiUrl } from '../config';
-
-// 카테고리별 기본 이미지
-const categoryDefaultImages: Record<string, string> = {
-  'battery': '/image/batterypack_1.jpg',
-  'motor': '/image/motor_1.jpg',
-  'inverter': '/image/inverter_1.png',
-  'body-chassis-frame': '/image/car_body_1.jpg',
-  'body-panel': '/image/car_body_2.jpg',
-  'body-door': '/image/car_body_3.png',
-  'body-window': '/image/car_body_1.jpg',
-  'body': '/image/car_body_1.jpg', // 하위 호환성
-  'charger': '/image/batterypack_1.jpg',
-  'electronics': '/image/inverter_1.png',
-  'interior': '/image/car_body_1.jpg',
-  'other': '/image/car_body_1.jpg',
-};
-
-// 이미지 URL 가져오기 헬퍼 함수
-const getPartImageUrl = (part: Part, index: number = 0): string => {
-  if (part.images && part.images.length > index && part.images[index]) {
-    return part.images[index];
-  }
-  return categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
-};
-
-// Mock 데이터를 Part 타입으로 변환
-const convertMockPartToPart = (mockPart: any): Part => {
-  const categoryMap: Record<string, string> = {
-    '배터리': 'battery',
-    '모터': 'motor',
-    '인버터': 'inverter',
-    '충전기': 'charger',
-    '전장 부품': 'electronics',
-    '차체': 'body',
-    '내장재': 'interior',
-    '기타': 'other'
-  };
-
-  const categoryEng = categoryMap[mockPart.category] || 'other';
-
-  return {
-    partId: mockPart.id,
-    name: mockPart.name,
-    category: categoryEng as any,
-    manufacturer: mockPart.manufacturer,
-    model: mockPart.model,
-    year: mockPart.year,
-    condition: 'used' as any,
-    price: mockPart.price,
-    quantity: mockPart.quantity,
-    sellerId: mockPart.seller?.company || 'demo-seller',
-    description: mockPart.description,
-    images: mockPart.images,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    specifications: mockPart.specifications,
-    useCases: mockPart.useCases
-  };
-};
+import {
+  categoryDefaultImages,
+  getPartImageUrl,
+  convertMockPartToPart,
+} from '../constants/categoryImages';
+import { Modal, Button } from '../components/ui';
 
 export default function PartDetail() {
   const { id } = useParams<{ id: string }>();
@@ -501,176 +448,180 @@ https://eecar.com`;
       </div>
 
       {/* 통합 문의/제안 모달 */}
-      {showContactModal && (
-        <div className="modal-overlay" onClick={() => setShowContactModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>판매자 문의하기</h3>
-              <button className="close-button" onClick={() => setShowContactModal(false)}>
-                ✕
-              </button>
-            </div>
-
-            {/* 탭 전환 */}
-            <div className="modal-tabs">
-              <button
-                className={`tab-button ${contactTab === 'inquiry' ? 'active' : ''}`}
-                onClick={() => setContactTab('inquiry')}
-              >
-                일반 문의
-              </button>
-              <button
-                className={`tab-button ${contactTab === 'proposal' ? 'active' : ''}`}
-                onClick={() => setContactTab('proposal')}
-              >
-                구매 제안
-              </button>
-            </div>
-
-            <div className="modal-body">
-              {contactTab === 'inquiry' ? (
-                // 일반 문의 탭
-                <>
-                  <p className="modal-description">
-                    EECAR 고객센터로 문의가 전송됩니다.<br/>
-                    아래 정보를 입력해주세요.
-                  </p>
-
-                  <div className="email-preview">
-                    <div className="preview-label">이름</div>
-                    <input
-                      type="text"
-                      className="email-subject-input"
-                      placeholder="홍길동"
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                    />
-
-                    <div className="preview-label">이메일</div>
-                    <input
-                      type="email"
-                      className="email-subject-input"
-                      placeholder="example@email.com"
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                    />
-
-                    <div className="preview-label">받는 사람</div>
-                    <div className="preview-value">EECAR 고객센터 (inha2025vip@gmail.com)</div>
-
-                    <div className="preview-label">제목</div>
-                    <input
-                      type="text"
-                      className="email-subject-input"
-                      value={emailSubject}
-                      onChange={(e) => setEmailSubject(e.target.value)}
-                    />
-
-                    <div className="preview-label">내용</div>
-                    <textarea
-                      className="email-body-input"
-                      value={emailBody}
-                      onChange={(e) => setEmailBody(e.target.value)}
-                      rows={15}
-                    />
-                  </div>
-
-                  <div className="modal-tip">
-                    💡 [사용 목적], [연락 가능한 시간], [희망 미팅 방식]을 입력한 후 전송해주세요.
-                  </div>
-                </>
-              ) : (
-                // 구매 제안 탭
-                <>
-                  <p className="modal-description">
-                    판매자에게 구매 제안을 보냅니다. 조건을 입력하고 전송하세요.
-                  </p>
-
-                  <div className="proposal-part-info">
-                    <strong>{part.name}</strong>
-                    <span>현재 가격: {part.price.toLocaleString()}원</span>
-                  </div>
-
-                  <div className="form-group">
-                    <label>수량 *</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={proposalData.quantity}
-                      onChange={(e) => setProposalData({ ...proposalData, quantity: parseInt(e.target.value) })}
-                      className="form-input"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>제안 가격 (원) *</label>
-                    <input
-                      type="number"
-                      placeholder="예: 14000000"
-                      value={proposalData.priceOffer}
-                      onChange={(e) => setProposalData({ ...proposalData, priceOffer: e.target.value })}
-                      className="form-input"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>희망 납기일</label>
-                    <input
-                      type="date"
-                      value={proposalData.deliveryDate}
-                      onChange={(e) => setProposalData({ ...proposalData, deliveryDate: e.target.value })}
-                      className="form-input"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>결제 조건</label>
-                    <input
-                      type="text"
-                      placeholder="예: 계약금 30%, 잔금 70%"
-                      value={proposalData.paymentTerms}
-                      onChange={(e) => setProposalData({ ...proposalData, paymentTerms: e.target.value })}
-                      className="form-input"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>추가 메시지</label>
-                    <textarea
-                      rows={4}
-                      placeholder="제안에 대한 추가 설명을 입력하세요"
-                      value={proposalData.message}
-                      onChange={(e) => setProposalData({ ...proposalData, message: e.target.value })}
-                      className="form-textarea"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="modal-footer">
-              <button
-                className="cancel-button"
-                onClick={() => setShowContactModal(false)}
-              >
-                취소
-              </button>
-              <button
-                className="send-button"
-                onClick={contactTab === 'inquiry' ? handleContactClick : handleProposal}
-                disabled={
-                  (contactTab === 'inquiry' && isSubmittingContact) ||
-                  (contactTab === 'proposal' && createProposalMutation.isPending)
-                }
-              >
-                {contactTab === 'inquiry'
-                  ? isSubmittingContact ? '전송 중...' : '문의하기'
-                  : createProposalMutation.isPending ? '전송 중...' : '제안 전송'}
-              </button>
-            </div>
-          </div>
+      <Modal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+        title="판매자 문의하기"
+        maxWidth="600px"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => setShowContactModal(false)}
+              fullWidth
+            >
+              취소
+            </Button>
+            <Button
+              variant="primary"
+              onClick={contactTab === 'inquiry' ? handleContactClick : handleProposal}
+              isLoading={
+                (contactTab === 'inquiry' && isSubmittingContact) ||
+                (contactTab === 'proposal' && createProposalMutation.isPending)
+              }
+              fullWidth
+            >
+              {contactTab === 'inquiry' ? '문의하기' : '제안 전송'}
+            </Button>
+          </>
+        }
+      >
+        {/* 탭 전환 */}
+        <div className="modal-tabs">
+          <button
+            className={`tab-button ${contactTab === 'inquiry' ? 'active' : ''}`}
+            onClick={() => setContactTab('inquiry')}
+            type="button"
+          >
+            일반 문의
+          </button>
+          <button
+            className={`tab-button ${contactTab === 'proposal' ? 'active' : ''}`}
+            onClick={() => setContactTab('proposal')}
+            type="button"
+          >
+            구매 제안
+          </button>
         </div>
-      )}
+
+        {contactTab === 'inquiry' ? (
+          // 일반 문의 탭
+          <>
+            <p className="modal-description">
+              EECAR 고객센터로 문의가 전송됩니다.<br/>
+              아래 정보를 입력해주세요.
+            </p>
+
+            <div className="email-preview">
+              <div className="preview-label">이름</div>
+              <input
+                type="text"
+                className="email-subject-input"
+                placeholder="홍길동"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                aria-label="이름"
+              />
+
+              <div className="preview-label">이메일</div>
+              <input
+                type="email"
+                className="email-subject-input"
+                placeholder="example@email.com"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                aria-label="이메일"
+              />
+
+              <div className="preview-label">받는 사람</div>
+              <div className="preview-value">EECAR 고객센터 (inha2025vip@gmail.com)</div>
+
+              <div className="preview-label">제목</div>
+              <input
+                type="text"
+                className="email-subject-input"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                aria-label="제목"
+              />
+
+              <div className="preview-label">내용</div>
+              <textarea
+                className="email-body-input"
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                rows={15}
+                aria-label="내용"
+              />
+            </div>
+
+            <div className="modal-tip">
+              💡 [사용 목적], [연락 가능한 시간], [희망 미팅 방식]을 입력한 후 전송해주세요.
+            </div>
+          </>
+        ) : (
+          // 구매 제안 탭
+          <>
+            <p className="modal-description">
+              판매자에게 구매 제안을 보냅니다. 조건을 입력하고 전송하세요.
+            </p>
+
+            <div className="proposal-part-info">
+              <strong>{part.name}</strong>
+              <span>현재 가격: {part.price.toLocaleString()}원</span>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="proposal-quantity">수량 *</label>
+              <input
+                id="proposal-quantity"
+                type="number"
+                min="1"
+                value={proposalData.quantity}
+                onChange={(e) => setProposalData({ ...proposalData, quantity: parseInt(e.target.value) })}
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="proposal-price">제안 가격 (원) *</label>
+              <input
+                id="proposal-price"
+                type="number"
+                placeholder="예: 14000000"
+                value={proposalData.priceOffer}
+                onChange={(e) => setProposalData({ ...proposalData, priceOffer: e.target.value })}
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="proposal-date">희망 납기일</label>
+              <input
+                id="proposal-date"
+                type="date"
+                value={proposalData.deliveryDate}
+                onChange={(e) => setProposalData({ ...proposalData, deliveryDate: e.target.value })}
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="proposal-terms">결제 조건</label>
+              <input
+                id="proposal-terms"
+                type="text"
+                placeholder="예: 계약금 30%, 잔금 70%"
+                value={proposalData.paymentTerms}
+                onChange={(e) => setProposalData({ ...proposalData, paymentTerms: e.target.value })}
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="proposal-message">추가 메시지</label>
+              <textarea
+                id="proposal-message"
+                rows={4}
+                placeholder="제안에 대한 추가 설명을 입력하세요"
+                value={proposalData.message}
+                onChange={(e) => setProposalData({ ...proposalData, message: e.target.value })}
+                className="form-textarea"
+              />
+            </div>
+          </>
+        )}
+      </Modal>
 
       <style>{`
         * {
