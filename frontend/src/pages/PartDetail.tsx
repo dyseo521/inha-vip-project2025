@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import type { Part } from '@shared/index';
@@ -6,11 +6,12 @@ import { useAuth } from '../context/AuthContext';
 import { mockParts } from '../data/mockParts';
 import { getApiUrl } from '../config';
 import {
-  categoryDefaultImages,
   getPartImageUrl,
   convertMockPartToPart,
 } from '../constants/categoryImages';
+import { createImageErrorHandler } from '../utils/imageUtils';
 import { Modal, Button } from '../components/ui';
+import { SpecificationDisplay } from '../components/specifications';
 
 export default function PartDetail() {
   const { id } = useParams<{ id: string }>();
@@ -90,8 +91,8 @@ export default function PartDetail() {
     },
   });
 
-  // 이메일 템플릿 생성 - part가 있을 때만 호출
-  const generateEmailTemplate = () => {
+  // 이메일 템플릿 생성 - part가 있을 때만 호출 (useCallback으로 메모이제이션)
+  const generateEmailTemplate = useCallback(() => {
     if (!part) return { subject: '', body: '' };
 
     const subject = `[EECAR] ${part.name} 구매 문의`;
@@ -120,9 +121,9 @@ EECAR 전기차 부품 거래 플랫폼
 https://eecar.com`;
 
     return { subject, body };
-  };
+  }, [part]);
 
-  const handleOpenModal = (tab: 'inquiry' | 'proposal' = 'inquiry') => {
+  const handleOpenModal = useCallback((tab: 'inquiry' | 'proposal' = 'inquiry') => {
     if (tab === 'inquiry') {
       const { subject, body } = generateEmailTemplate();
       setEmailSubject(subject);
@@ -130,7 +131,7 @@ https://eecar.com`;
     }
     setContactTab(tab);
     setShowContactModal(true);
-  };
+  }, [generateEmailTemplate]);
 
   const handleContactClick = async () => {
     // Validation
@@ -308,12 +309,7 @@ https://eecar.com`;
               <img
                 src={getPartImageUrl(part, selectedImage)}
                 alt={part.name}
-                onError={(e) => {
-                  const defaultImg = categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
-                  if (e.currentTarget.src !== window.location.origin + defaultImg) {
-                    e.currentTarget.src = defaultImg;
-                  }
-                }}
+                onError={createImageErrorHandler(part.category)}
               />
               {part.quantity && (
                 <div className="quantity-badge">{part.quantity}개 재고</div>
@@ -331,10 +327,7 @@ https://eecar.com`;
                     <img
                       src={img}
                       alt={`${part.name} ${idx + 1}`}
-                      onError={(e) => {
-                        const defaultImg = categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
-                        e.currentTarget.src = defaultImg;
-                      }}
+                      onError={createImageErrorHandler(part.category)}
                     />
                   </div>
                 ))}
@@ -387,24 +380,14 @@ https://eecar.com`;
         )}
 
         {/* 상세 사양 */}
-        {part.specifications && (
+        {part.specifications && Object.keys(part.specifications).length > 0 && (
           <section className="specifications-section">
             <h3>상세 사양</h3>
-            <div className="specs-grid">
-              {Object.entries(part.specifications).map(([key, value]) => {
-                // 객체인 경우 적절히 처리
-                const displayValue = typeof value === 'object' && value !== null
-                  ? JSON.stringify(value, null, 2)
-                  : String(value);
-
-                return (
-                  <div key={key} className="spec-row">
-                    <span className="spec-key">{key}</span>
-                    <span className="spec-val" style={{ whiteSpace: 'pre-wrap' }}>{displayValue}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <SpecificationDisplay
+              specifications={part.specifications}
+              batteryHealth={part.batteryHealth}
+              category={part.category}
+            />
           </section>
         )}
 
