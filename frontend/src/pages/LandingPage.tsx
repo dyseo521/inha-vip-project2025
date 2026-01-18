@@ -1,20 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useScrollPosition } from '../hooks/useScrollPosition';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const scrollY = useScrollPosition(); // 최적화된 스크롤 위치 훅 사용
 
   // Intersection Observer for fade-in animations
   useEffect(() => {

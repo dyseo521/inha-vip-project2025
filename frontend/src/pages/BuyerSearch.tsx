@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { useInView } from 'react-intersection-observer';
@@ -8,10 +8,11 @@ import { getApiUrl } from '../config';
 import { getRelativeTime } from '../utils/relativeTime';
 import {
   categoryMap,
-  categoryDefaultImages,
   getPartImageUrl,
   convertMockPartToPart,
 } from '../constants/categoryImages';
+import { CATEGORIES, EXAMPLE_CASES, CATHODE_TYPES } from '../constants/searchConstants';
+import { createImageErrorHandler } from '../utils/imageUtils';
 import { useFilteredParts } from '../hooks';
 import { Modal, Button } from '../components/ui';
 
@@ -233,7 +234,7 @@ export default function BuyerSearch() {
     },
   });
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
 
@@ -245,7 +246,7 @@ export default function BuyerSearch() {
       // 기본 모드: 일반 검색 (카테고리/가격 필터만 적용)
       setSearchParams(null);
     }
-  };
+  }, [query, isAIMode]);
 
   const handleAdvancedSearch = () => {
     if (searchMode === 'battery') {
@@ -256,7 +257,7 @@ export default function BuyerSearch() {
   };
 
   // 검색 조건 초기화 함수
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setQuery('');
     setSearchParams(null);
     setSelectedCategory('all');
@@ -269,7 +270,7 @@ export default function BuyerSearch() {
     setRecyclabilityMin('');
     setSearchMode('ai');
     setIsAIMode(false);
-  };
+  }, []);
 
   const handleCreateWatch = () => {
     if (!watchEmail) {
@@ -314,60 +315,16 @@ export default function BuyerSearch() {
     isAIMode,
   });
 
-  // AI 검색 결과 표시 제한
-  const displayedAiResults = currentData?.results?.slice(0, aiDisplayLimit) || [];
-  const hasMoreAiResults = (currentData?.results?.length || 0) > aiDisplayLimit;
-  const remainingAiCount = (currentData?.results?.length || 0) - aiDisplayLimit;
+  // AI 검색 결과 표시 제한 (useMemo로 불필요한 재계산 방지)
+  const { displayedAiResults, hasMoreAiResults, remainingAiCount } = useMemo(() => ({
+    displayedAiResults: currentData?.results?.slice(0, aiDisplayLimit) || [],
+    hasMoreAiResults: (currentData?.results?.length || 0) > aiDisplayLimit,
+    remainingAiCount: (currentData?.results?.length || 0) - aiDisplayLimit,
+  }), [currentData?.results, aiDisplayLimit]);
 
-  const loadMoreAiResults = () => {
+  const loadMoreAiResults = useCallback(() => {
     setAiDisplayLimit(prev => prev + 6);
-  };
-
-  const categories = ['all', '배터리', '모터', '인버터', '충전기', '전장 부품', '차체-섀시/프레임', '차체-패널', '차체-도어', '차체-창/유리', '내장재', '기타'];
-
-  // 예시 사례 데이터
-  const exampleCases = [
-    {
-      query: "ESS 에너지 저장 시스템에 사용할 배터리를 찾고 있어요. 60kWh 이상이면 좋겠습니다.",
-      result: {
-        name: "Tesla Model S 배터리 팩",
-        capacity: "85kWh",
-        score: 0.94
-      }
-    },
-    {
-      query: "전기 트럭 개조 프로젝트를 위한 고성능 모터가 필요합니다.",
-      result: {
-        name: "Nissan Leaf 구동 모터",
-        power: "110kW",
-        score: 0.89
-      }
-    },
-    {
-      query: "태양광 연계 ESS 구축용 인버터를 구하고 있습니다. 3상 전력 지원 필요.",
-      result: {
-        name: "BMW i3 인버터",
-        type: "3상 AC/DC",
-        score: 0.92
-      }
-    },
-    {
-      query: "소형 전기차 DIY 프로젝트. 20kWh 정도의 배터리면 충분할 것 같아요.",
-      result: {
-        name: "Renault Zoe 배터리 모듈",
-        capacity: "22kWh",
-        score: 0.88
-      }
-    },
-    {
-      query: "전기 보트 전환 프로젝트를 진행 중입니다. 방수 처리된 모터가 필요해요.",
-      result: {
-        name: "Chevrolet Bolt 구동 모터",
-        power: "150kW",
-        score: 0.85
-      }
-    }
-  ];
+  }, []);
 
   return (
     <div className="buyer-search">
@@ -447,7 +404,7 @@ export default function BuyerSearch() {
             <section className="filter-section">
               <h3>카테고리</h3>
               <div className="category-filters">
-                {categories.map(cat => (
+                {CATEGORIES.map(cat => (
                   <button
                     key={cat}
                     className={`category-btn ${selectedCategory === cat ? 'active' : ''}`}
@@ -557,7 +514,7 @@ export default function BuyerSearch() {
                       <div className="filter-group">
                         <label>양극재 타입</label>
                         <div className="cathode-types">
-                          {['NCM Ni 80%', 'NCM Ni 60%', 'NCA', 'LFP'].map(type => (
+                          {CATHODE_TYPES.map(type => (
                             <label key={type} className="checkbox-label">
                               <input
                                 type="checkbox"
@@ -698,12 +655,7 @@ export default function BuyerSearch() {
                         <img
                           src={getPartImageUrl(part)}
                           alt={part.name}
-                          onError={(e) => {
-                            const defaultImg = categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
-                            if (e.currentTarget.src !== window.location.origin + defaultImg) {
-                              e.currentTarget.src = defaultImg;
-                            }
-                          }}
+                          onError={createImageErrorHandler(part.category)}
                         />
                         <div className={`accuracy-badge ${isEliteMatch ? 'elite' : ''}`}>
                           {accuracy.toFixed(0)}% 일치
@@ -776,12 +728,7 @@ export default function BuyerSearch() {
                           <img
                             src={getPartImageUrl(part)}
                             alt={part.name}
-                            onError={(e) => {
-                              const defaultImg = categoryDefaultImages[part.category] || '/image/car_body_1.jpg';
-                              if (e.currentTarget.src !== window.location.origin + defaultImg) {
-                                e.currentTarget.src = defaultImg;
-                              }
-                            }}
+                            onError={createImageErrorHandler(part.category)}
                           />
                           {part.createdAt && (
                             <div className="time-badge">{getRelativeTime(part.createdAt)}</div>
@@ -833,7 +780,7 @@ export default function BuyerSearch() {
           <div className="sidebar-sticky">
             <h3>검색 예시</h3>
             <div className="examples-list">
-              {exampleCases.slice(0, 3).map((example, index) => (
+              {EXAMPLE_CASES.slice(0, 3).map((example, index) => (
                 <div key={index} className="example-card-compact">
                   <div className="example-query">
                     <p>{example.query}</p>
@@ -900,7 +847,7 @@ export default function BuyerSearch() {
             className="form-select"
           >
             <option value="">전체</option>
-            {categories.filter(c => c !== 'all').map(cat => (
+            {CATEGORIES.filter(c => c !== 'all').map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>

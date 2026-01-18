@@ -1,71 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseCase } from '@shared/index';
 import { getApiUrl } from '../config';
-
-// 카테고리별 사양 필드 정의
-const categorySpecFields: Record<string, { label: string; placeholder: string; key: string }[]> = {
-  battery: [
-    { key: 'voltage', label: '전압 (V)', placeholder: '예: 400V' },
-    { key: 'capacity', label: '용량', placeholder: '예: 85kWh' },
-    { key: 'chemistry', label: '셀 종류', placeholder: '예: NCM, LFP, NCA' },
-    { key: 'soc', label: 'SOC 범위', placeholder: '예: 0-100%' },
-    { key: 'cycles', label: '충방전 사이클', placeholder: '예: 2000 cycles' },
-    { key: 'weight', label: '무게', placeholder: '예: 540kg' },
-  ],
-  motor: [
-    { key: 'power', label: '출력', placeholder: '예: 150kW' },
-    { key: 'voltage', label: '전압 (V)', placeholder: '예: 400V' },
-    { key: 'torque', label: '토크', placeholder: '예: 395Nm' },
-    { key: 'rpm', label: '최대 RPM', placeholder: '예: 14000 RPM' },
-    { key: 'cooling', label: '냉각 방식', placeholder: '예: 수냉식' },
-    { key: 'weight', label: '무게', placeholder: '예: 45kg' },
-  ],
-  inverter: [
-    { key: 'power', label: '출력', placeholder: '예: 100kW' },
-    { key: 'voltage', label: '입력 전압 (V)', placeholder: '예: 400V DC' },
-    { key: 'phases', label: '상', placeholder: '예: 3상' },
-    { key: 'efficiency', label: '효율', placeholder: '예: 95%' },
-    { key: 'cooling', label: '냉각 방식', placeholder: '예: 수냉식' },
-    { key: 'weight', label: '무게', placeholder: '예: 15kg' },
-  ],
-  charger: [
-    { key: 'power', label: '충전 출력', placeholder: '예: 11kW' },
-    { key: 'voltage', label: '전압 범위 (V)', placeholder: '예: 200-450V' },
-    { key: 'current', label: '최대 전류 (A)', placeholder: '예: 32A' },
-    { key: 'type', label: '충전 타입', placeholder: '예: AC/DC, Type 2' },
-    { key: 'efficiency', label: '효율', placeholder: '예: 94%' },
-    { key: 'weight', label: '무게', placeholder: '예: 8kg' },
-  ],
-  electronics: [
-    { key: 'voltage', label: '전압 (V)', placeholder: '예: 12V' },
-    { key: 'power', label: '소비 전력', placeholder: '예: 500W' },
-    { key: 'type', label: '타입', placeholder: '예: BMS, OBC' },
-    { key: 'weight', label: '무게', placeholder: '예: 2kg' },
-  ],
-  body: [
-    { key: 'material', label: '재질', placeholder: '예: 알루미늄, 카본파이버' },
-    { key: 'dimensions', label: '치수', placeholder: '예: 1200x800x600mm' },
-    { key: 'weight', label: '무게', placeholder: '예: 25kg' },
-    { key: 'color', label: '색상', placeholder: '예: 흰색' },
-  ],
-  interior: [
-    { key: 'material', label: '재질', placeholder: '예: 가죽, 직물' },
-    { key: 'color', label: '색상', placeholder: '예: 검정' },
-    { key: 'condition', label: '상태', placeholder: '예: 찢어짐 없음' },
-  ],
-  other: [
-    { key: 'type', label: '타입', placeholder: '부품 타입' },
-    { key: 'specifications', label: '사양', placeholder: '주요 사양' },
-    { key: 'weight', label: '무게', placeholder: '예: 10kg' },
-  ],
-};
+import { CATEGORY_OPTIONS, CATEGORY_SPEC_FIELDS } from '../constants/formConstants';
+import { useScrollPosition } from '../hooks/useScrollPosition';
 
 export default function SellerDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [scrollY, setScrollY] = useState(0);
+  const scrollY = useScrollPosition(); // 최적화된 스크롤 위치 훅 사용
   const [formData, setFormData] = useState({
     name: '',
     category: 'battery',
@@ -88,20 +32,12 @@ export default function SellerDashboard() {
 
   // 이미지 URL들 (나중에 S3 업로드로 변경)
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [, setUploadedFiles] = useState<File[]>([]); // uploadedFiles는 현재 미사용 (S3 업로드 구현 시 활성화)
 
   // 카테고리 변경 시 specifications 초기화
   useEffect(() => {
     setSpecifications({});
   }, [formData.category]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // Cleanup blob URLs on unmount to prevent memory leaks
   useEffect(() => {
@@ -189,33 +125,35 @@ export default function SellerDashboard() {
     });
   };
 
-  const addUseCase = () => {
-    setUseCases([...useCases, { industry: '', application: '', description: '' }]);
-  };
+  const addUseCase = useCallback(() => {
+    setUseCases(prev => [...prev, { industry: '', application: '', description: '' }]);
+  }, []);
 
-  const removeUseCase = (index: number) => {
-    setUseCases(useCases.filter((_, i) => i !== index));
-  };
+  const removeUseCase = useCallback((index: number) => {
+    setUseCases(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
-  const updateUseCase = (index: number, field: keyof UseCase, value: string) => {
-    const updated = [...useCases];
-    updated[index] = { ...updated[index], [field]: value };
-    setUseCases(updated);
-  };
+  const updateUseCase = useCallback((index: number, field: keyof UseCase, value: string) => {
+    setUseCases(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  }, []);
 
-  const removeImageUrl = (index: number) => {
-    setImageUrls(imageUrls.filter((_, i) => i !== index));
-  };
+  const removeImageUrl = useCallback((index: number) => {
+    setImageUrls(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      setUploadedFiles([...uploadedFiles, ...files]);
+      setUploadedFiles(prev => [...prev, ...files]);
       // 임시로 로컬 URL 생성 (실제로는 S3 업로드 후 URL 받아야 함)
       const urls = files.map(file => URL.createObjectURL(file));
-      setImageUrls([...imageUrls.filter(url => url !== ''), ...urls]);
+      setImageUrls(prev => [...prev.filter(url => url !== ''), ...urls]);
     }
-  };
+  }, []);
 
   return (
     <div className="seller-dashboard">
@@ -284,16 +222,7 @@ export default function SellerDashboard() {
             <div className="form-group">
               <label>카테고리 *</label>
               <div className="category-scroll-container">
-                {[
-                  { value: 'battery', label: '배터리' },
-                  { value: 'motor', label: '모터' },
-                  { value: 'inverter', label: '인버터' },
-                  { value: 'charger', label: '충전기' },
-                  { value: 'electronics', label: '전장 부품' },
-                  { value: 'body', label: '차체' },
-                  { value: 'interior', label: '내장재' },
-                  { value: 'other', label: '기타' },
-                ].map((cat) => (
+                {CATEGORY_OPTIONS.map((cat) => (
                   <button
                     key={cat.value}
                     type="button"
@@ -446,10 +375,10 @@ export default function SellerDashboard() {
                 {formData.category === 'charger' && '충전기 부품의 주요 사양을 입력하세요'}
                 {!['battery', 'motor', 'inverter', 'charger'].includes(formData.category) && '부품의 주요 사양을 입력하세요'}
               </p>
-              {categorySpecFields[formData.category]?.map((field, index) => {
+              {CATEGORY_SPEC_FIELDS[formData.category]?.map((field, index) => {
                 // 2개씩 묶어서 한 행에 표시
                 if (index % 2 === 0) {
-                  const nextField = categorySpecFields[formData.category][index + 1];
+                  const nextField = CATEGORY_SPEC_FIELDS[formData.category][index + 1];
                   return (
                     <div key={index} className="form-row">
                       <div className="form-group">
