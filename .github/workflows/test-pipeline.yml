@@ -40,7 +40,7 @@ jobs:
         uses: ./.github/actions/setup-node-workspace
 
       - name: Run frontend tests
-        run: cd frontend && npm test -- --coverage --ci
+        run: cd frontend && npm test -- --coverage
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
