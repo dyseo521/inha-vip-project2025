@@ -399,6 +399,26 @@ export const ErrorResponseSchema = z.object({
   statusCode: z.number().int().optional()
 }).openapi('ErrorResponse');
 
+// ==================== Slack Events ====================
+
+export const SlackEventRequestSchema = z.object({
+  type: z.string().openapi({ description: '이벤트 타입', example: 'event_callback' }),
+  challenge: z.string().optional().openapi({ description: 'URL 검증용 챌린지' }),
+  event: z.object({
+    type: z.string().openapi({ example: 'app_mention' }),
+    user: z.string().optional(),
+    text: z.string().optional(),
+    channel: z.string().optional(),
+    ts: z.string().optional()
+  }).optional().openapi({ description: 'Slack 이벤트 데이터' })
+}).passthrough().openapi('SlackEventRequest');
+
+export const SlackEventResponseSchema = z.object({
+  ok: z.boolean(),
+  challenge: z.string().optional(),
+  message: z.string().optional()
+}).openapi('SlackEventResponse');
+
 // ==================== Type Exports ====================
 
 export type PartCategory = z.infer<typeof PartCategorySchema>;
