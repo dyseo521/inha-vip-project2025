@@ -37,6 +37,8 @@ import {
   SyntheticDataRequestSchema,
   SyntheticDataResponseSchema,
   ErrorResponseSchema,
+  SlackEventRequestSchema,
+  SlackEventResponseSchema,
   // Component schemas
   PartCategorySchema,
   PartConditionSchema,
@@ -560,6 +562,54 @@ registry.registerPath({
   },
 });
 
+// POST /api/slack/events - Slack Events (자동이 2.0)
+registry.registerPath({
+  method: 'post',
+  path: '/api/slack/events',
+  tags: ['Slack'],
+  summary: 'Slack 이벤트 수신 (자동이 2.0)',
+  description: `자동이 2.0 AI DevOps 어시스턴트
+- @멘션으로 자연어 질의
+- Slash Command (/jadong)
+- URL 검증 (challenge)
+- ReAct 패턴 기반 에러 분석 및 해결책 제안`,
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: SlackEventRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '이벤트 처리 완료',
+      content: {
+        'application/json': {
+          schema: SlackEventResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Slack 서명 검증 실패',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: '서버 오류',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
 // ==================== Generate OpenAPI Document ====================
 
 const generator = new OpenApiGeneratorV3(registry.definitions);
@@ -609,6 +659,7 @@ const openApiDocument = generator.generateDocument({
     { name: 'Proposals', description: 'B2B 거래 제안 API' },
     { name: 'Contact', description: '문의 API' },
     { name: 'Synthetic', description: '테스트 데이터 생성 API' },
+    { name: 'Slack', description: '자동이 2.0 Slack 봇 API' },
   ],
 });
 

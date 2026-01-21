@@ -43,6 +43,8 @@ tags:
     description: 문의 API
   - name: Synthetic
     description: 테스트 데이터 생성 API
+  - name: Slack
+    description: 자동이 2.0 Slack 봇 API
 components:
   schemas:
     PartCategory:
@@ -891,6 +893,46 @@ components:
           default: 10
       required:
         - category
+    SlackEventResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        challenge:
+          type: string
+        message:
+          type: string
+      required:
+        - ok
+    SlackEventRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          description: 이벤트 타입
+          example: event_callback
+        challenge:
+          type: string
+          description: URL 검증용 챌린지
+        event:
+          type: object
+          properties:
+            type:
+              type: string
+              example: app_mention
+            user:
+              type: string
+            text:
+              type: string
+            channel:
+              type: string
+            ts:
+              type: string
+          required:
+            - type
+          description: Slack 이벤트 데이터
+      required:
+        - type
   parameters: {}
 paths:
   /api/search:
@@ -1260,6 +1302,41 @@ paths:
                 $ref: "#/components/schemas/SyntheticDataResponse"
         "400":
           description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/slack/events:
+    post:
+      tags:
+        - Slack
+      summary: Slack 이벤트 수신 (자동이 2.0)
+      description: |-
+        자동이 2.0 AI DevOps 어시스턴트
+        - @멘션으로 자연어 질의
+        - Slash Command (/jadong)
+        - URL 검증 (challenge)
+        - ReAct 패턴 기반 에러 분석 및 해결책 제안
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SlackEventRequest"
+      responses:
+        "200":
+          description: 이벤트 처리 완료
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlackEventResponse"
+        "401":
+          description: Slack 서명 검증 실패
           content:
             application/json:
               schema:
