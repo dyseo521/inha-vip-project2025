@@ -49,8 +49,8 @@ test.describe('Search Flow', () => {
     // Type search query
     await searchInput.fill('72kWh 배터리');
 
-    // Find and click search button
-    const searchButton = page.getByRole('button', { name: /검색/i }).first();
+    // Find and click search submit button (arrow button with type="submit")
+    const searchButton = page.locator('button[type="submit"].search-arrow-btn');
     await searchButton.click();
 
     // Wait for search results
@@ -93,8 +93,8 @@ test.describe('Search Filters', () => {
   });
 
   test('should have price filter', async ({ page }) => {
-    // Price section should exist
-    await expect(page.getByText(/가격|원/)).toBeVisible();
+    // Price section should exist (use heading "가격 범위")
+    await expect(page.getByRole('heading', { name: /가격 범위/i })).toBeVisible();
   });
 
   test('should display watch/alert button', async ({ page }) => {

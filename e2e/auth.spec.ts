@@ -5,8 +5,8 @@ test.describe('Authentication Flow', () => {
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
 
-    // Login form should be visible
-    await expect(page.getByText(/로그인|Login/i)).toBeVisible();
+    // Login form should be visible (use heading to avoid matching button)
+    await expect(page.getByRole('heading', { name: /로그인|Login/i })).toBeVisible();
   });
 
   test('should have email and password inputs', async ({ page }) => {
@@ -35,8 +35,8 @@ test.describe('Authentication Flow', () => {
     await page.goto('/signup');
     await page.waitForLoadState('networkidle');
 
-    // Signup form should be visible
-    await expect(page.getByText(/회원가입|Sign up|Register/i)).toBeVisible();
+    // Signup form should be visible (use heading to avoid matching button)
+    await expect(page.getByRole('heading', { name: /회원가입|Sign up|Register/i })).toBeVisible();
   });
 
   test('should navigate between login and signup', async ({ page }) => {
