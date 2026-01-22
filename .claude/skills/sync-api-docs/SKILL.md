@@ -170,3 +170,21 @@ grep -E "path: '/api" scripts/generate-openapi.ts
 # docs/openapi.yaml에서 paths 섹션 확인
 grep -E "^  /api" docs/openapi.yaml
 ```
+
+## 문서 확인 (Swagger UI)
+
+OpenAPI 명세는 Swagger UI를 통해 인터랙티브하게 확인할 수 있습니다:
+
+```bash
+# 로컬에서 확인
+npm run docs:serve
+# http://localhost:8080 접속
+
+# 또는 GitHub Pages에서 확인
+# https://<username>.github.io/eecar/
+```
+
+Swagger UI 기능:
+- 모든 엔드포인트 목록 및 상세 스펙 확인
+- Request/Response 스키마 탐색
+- "Try it out"으로 API 테스트 (로컬 서버 연동 시)
