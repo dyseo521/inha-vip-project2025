@@ -22,12 +22,18 @@ EECAR는 1세대 전기차(2010년대 초반)의 수명 종료에 따라 증가�
 - **인프라 비용 99.8% 절감**: OpenSearch ($700/월) → S3 Vectors ($1/월)
 - **5000개 벡터 검색 50ms 이내 응답**
 
+### 시스템 아키텍처
+
+![EECAR Main Architecture](diagrams/eecar-main-architecture.png)
+
 ## 주요 기능
 
 ### AI 기반 검색
 - **Hybrid RAG**: 벡터 검색 70% + BM25 키워드 30% 가중치 결합
 - AI/기본 검색 모드 토글로 전환 가능
 - 정확도 기반 시각적 하이라이팅 (85%+ 골든, 80%+ 그린)
+
+![EECAR RAG Pipeline](diagrams/eecar-rag-pipeline.png)
 
 ### 배터리 SOH 평가
 - 70% 기준 재사용/재활용 자동 판단
@@ -43,6 +49,8 @@ EECAR는 1세대 전기차(2010년대 초반)의 수명 종료에 따라 증가�
 - Bedrock Knowledge Base + S3 Vectors 기반 장기 기억 시스템
 - 14가지 에러 타입 자동 분류, 3단계 심각도 알림
 - 11개 Lambda 함수 통합 모니터링
+
+![EECAR Slack Agent](diagrams/eecar-slack-agent.png)
 
 ### 모니터링
 - AWS X-Ray 분산 추적 (Lambda, API Gateway 전 구간)
@@ -151,7 +159,6 @@ npm run build:all
 npm run deploy
 ```
 
-자세한 내용은 [로컬 개발 가이드](docs/LOCAL_DEVELOPMENT.md) 참조.
 
 ## CI/CD 파이프라인
 
@@ -179,7 +186,6 @@ git push origin v1.0.0
 
 ## API 엔드포인트
 
-**Base URL**: `https://6o4futufni.execute-api.ap-northeast-2.amazonaws.com/prod`
 
 | 엔드포인트 | 메서드 | 설명 |
 |-----------|--------|------|
@@ -192,88 +198,6 @@ git push origin v1.0.0
 | /api/contact | POST | 일반 문의 |
 | /api/slack/events | POST | Slack 이벤트 (자동이 2.0) |
 
-**API 문서 (Swagger UI)**: https://dyseo521.github.io/inha-vip-project2025/
-
-## 아키텍처
-
-### RAG 검색 플로우
-
-```
-사용자 쿼리 → Titan 임베딩 생성
-            ↓
-    Hybrid Search (Vector 70% + BM25 30%)
-            ↓
-    S3 Vectors에서 Top-K 검색
-            ↓
-    DynamoDB 메타데이터 조회
-            ↓
-    Claude Haiku 매칭 이유 생성
-            ↓
-    결과 캐싱 (7일 TTL)
-```
-
-### 자동이 2.0 아키텍처
-
-```
-CloudWatch Logs → Subscription Filter → Lambda (v1: push)
-                                              ↓
-                                        Slack 알림
-                                              ↓
-@멘션 질문 → Lambda (v2: ReAct) → CloudWatch/Metrics 조회
-                              → S3 Vectors 장기 기억 검색
-                              → Claude 분석 및 응답
-```
-
-## 문서
-
-| 문서 | 설명 |
-|------|------|
-| [API 문서 (Swagger UI)](https://dyseo521.github.io/inha-vip-project2025/) | API 엔드포인트 상세 (자동 생성) |
-| [DYNAMODB_SCHEMA.md](docs/DYNAMODB_SCHEMA.md) | DynamoDB 스키마 설계 |
-| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | 개발 가이드 (Lambda 추가, 타입 수정) |
-| [LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md) | 로컬 개발 환경 설정 |
-| [CONFIGURATION.md](docs/CONFIGURATION.md) | 환경 변수, AWS, Slack 설정 |
-| [COST_OPTIMIZATION.md](docs/COST_OPTIMIZATION.md) | 비용 최적화 전략 |
-| [JADONG_SETUP.md](docs/JADONG_SETUP.md) | 자동이 Slack 봇 설정 |
-
-## 트러블슈팅
-
-### Bedrock 권한 오류
-
-```bash
-# 모델 접근 확인
-aws bedrock list-foundation-models --region ap-northeast-2 \
-  --query "modelSummaries[?contains(modelId,'anthropic.claude')].modelId"
-```
-
-AWS Console → Bedrock → Model access에서 모델 접근 요청 필요.
-
-### 포트 충돌
-
-```bash
-lsof -ti:3000 | xargs kill -9
-lsof -ti:3001 | xargs kill -9
-```
-
-### DynamoDB 테이블 미발견
-
-```bash
-npm run docker:up  # Docker 서비스 시작
-```
-
-### ESM 모듈 오류
-
-모든 로컬 import에 `.js` 확장자 필수:
-```typescript
-import { helper } from './utils.js';  // 올바름
-import { helper } from './utils';      // 오류
-```
-
-자세한 트러블슈팅은 [DEVELOPMENT.md](docs/DEVELOPMENT.md) 참조.
-
-## 라이선스
-
-MIT License
 
 ## 문의
 
